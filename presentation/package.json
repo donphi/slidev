@@ -2,7 +2,7 @@
   "name": "slidev-presentation",
   "private": true,
   "scripts": {
-    "dev": "slidev --remote --port 3030",
+    "dev": "slidev --remote --port 3030 --base /slidev/",
     "build": "slidev build --base /slidev/",
     "export": "slidev export --output slides-export.pdf"
   },
@@ -16,4 +16,3 @@
     "playwright-chromium": "^1.48.0"
   }
 }
-

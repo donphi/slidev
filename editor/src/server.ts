@@ -3,8 +3,8 @@ import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
-import { exec } from 'child_process';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { chromium } from 'playwright-chromium';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -680,6 +680,11 @@ app.get('/api/themes/current', async (req: Request, res: Response) => {
 const PDF_PATH = path.join(SLIDEV_DIR, 'slides-export.pdf');
 let exportInProgress = false;
 
+const buildSlidevPrintUrl = () => {
+  const base = SLIDEV_URL.endsWith('/') ? SLIDEV_URL.slice(0, -1) : SLIDEV_URL;
+  return `${base}/slidev/print?print=true`;
+};
+
 // Helper to find the exported PDF (Sli.dev may use different names)
 const findExportedPdf = (): string | null => {
   // Check common export filenames in SLIDEV_DIR
@@ -706,8 +711,7 @@ const findExportedPdf = (): string | null => {
   return null;
 };
 
-// API: Export to PDF using Slidev's official export command
-// This uses playwright-chromium under the hood - Slidev's recommended approach
+// API: Export to PDF using Playwright against the running Slidev dev server
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
     return res.status(409).json({ error: 'Export already in progress. Please wait.' });
@@ -716,43 +720,34 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   exportInProgress = true;
   const outputPath = path.join(SLIDEV_DIR, 'slides-export.pdf');
   
-  console.log('📄 Starting PDF export with Slidev CLI...');
+  console.log('📄 Starting PDF export with Playwright...');
   console.log(`   Working directory: ${SLIDEV_DIR}`);
   console.log(`   Output: ${outputPath}`);
   
+  const printUrl = buildSlidevPrintUrl();
+  console.log(`   Export source: ${printUrl}`);
+  
   try {
-    // Use Slidev's official export command (uses playwright-chromium)
-    // --timeout: Allow enough time for complex slides
-    // --output: Specify output path
-    const exportCmd = `npx slidev export --output "${outputPath}" --timeout 120000`;
-    
-    console.log('   Running:', exportCmd);
-    
-    const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
-      exec(exportCmd, { 
-        cwd: SLIDEV_DIR,          // Run from Slidev directory
-        timeout: 180000,          // 3 minutes total timeout
-        env: {
-          ...process.env,
-          // Playwright container-safe environment variables
-          PLAYWRIGHT_BROWSERS_PATH: '/ms-playwright',
-          // Force default base for export so Slidev doesn't expect /slidev/ prefix
-          SLIDEV_BASE: '/',
-        }
-      }, (error, stdout, stderr) => {
-        if (error) {
-          reject({ error, stdout, stderr });
-        } else {
-          resolve({ stdout, stderr });
-        }
-      });
+    const browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
     
-    console.log('📄 Slidev export completed');
-    if (result.stdout) console.log('   stdout:', result.stdout);
-    if (result.stderr) console.log('   stderr:', result.stderr);
+    try {
+      const page = await browser.newPage();
+      await page.goto(printUrl, { waitUntil: 'networkidle', timeout: 120000 });
+      
+      await page.pdf({
+        path: outputPath,
+        format: 'A4',
+        printBackground: true,
+        margin: { top: '0.5in', bottom: '0.5in', left: '0.5in', right: '0.5in' },
+        scale: 1
+      });
+    } finally {
+      await browser.close();
+    }
     
-    // Check if PDF was created
     if (existsSync(outputPath)) {
       exportInProgress = false;
       const stats = statSync(outputPath);
@@ -765,15 +760,8 @@ app.post('/api/export', async (_req: Request, res: Response) => {
     }
   } catch (err: any) {
     exportInProgress = false;
-    const errorMsg = err?.error?.message || err?.message || 'Unknown error';
-    const stdout = err?.stdout || '';
-    const stderr = err?.stderr || '';
-    
-    console.error('❌ Export failed:', errorMsg);
-    if (stdout) console.error('   stdout:', stdout);
-    if (stderr) console.error('   stderr:', stderr);
-    
-    res.status(500).json({ error: `Export failed: ${stderr || stdout || errorMsg}`.slice(0, 500) });
+    console.error('❌ Export failed:', err?.message || err);
+    res.status(500).json({ error: `Export failed: ${err?.message || 'Unknown error'}`.slice(0, 500) });
   }
 });
 
