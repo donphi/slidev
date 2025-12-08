@@ -1,10 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
+import { execSync } from 'child_process';
 import path from 'path';
 import { Pool } from 'pg';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { chromium } from 'playwright-chromium';
+// Note: playwright-chromium is used by Slidev's export command internally
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -680,11 +681,6 @@ app.get('/api/themes/current', async (req: Request, res: Response) => {
 const PDF_PATH = path.join(SLIDEV_DIR, 'slides-export.pdf');
 let exportInProgress = false;
 
-const buildSlidevPrintUrl = () => {
-  const base = SLIDEV_URL.endsWith('/') ? SLIDEV_URL.slice(0, -1) : SLIDEV_URL;
-  return `${base}/slidev/print?print=true`;
-};
-
 // Helper to find the exported PDF (Sli.dev may use different names)
 const findExportedPdf = (): string | null => {
   // Check common export filenames in SLIDEV_DIR
@@ -711,7 +707,8 @@ const findExportedPdf = (): string | null => {
   return null;
 };
 
-// API: Export to PDF using Playwright against the running Slidev dev server
+// API: Export to PDF using Slidev's built-in export command
+// This is the official recommended way per Slidev documentation
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
     return res.status(409).json({ error: 'Export already in progress. Please wait.' });
@@ -720,33 +717,34 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   exportInProgress = true;
   const outputPath = path.join(SLIDEV_DIR, 'slides-export.pdf');
   
-  console.log('📄 Starting PDF export with Playwright...');
+  console.log('📄 Starting PDF export with Slidev CLI...');
   console.log(`   Working directory: ${SLIDEV_DIR}`);
   console.log(`   Output: ${outputPath}`);
   
-  const printUrl = buildSlidevPrintUrl();
-  console.log(`   Export source: ${printUrl}`);
+  // Remove old PDF if it exists
+  try {
+    if (existsSync(outputPath)) {
+      unlinkSync(outputPath);
+    }
+  } catch (e) {
+    // Ignore
+  }
   
   try {
-    const browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    // Use Slidev's built-in export command (recommended approach)
+    // Run slidev export with timeout and proper options
+    // --timeout: allow enough time for complex presentations
+    // --output: specify output file name
+    execSync('npx slidev export --output slides-export.pdf --timeout 120000', {
+      cwd: SLIDEV_DIR,
+      timeout: 180000, // 3 minute timeout for the entire process
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        // Ensure Playwright can find browsers
+        PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '/ms-playwright',
+      }
     });
-    
-    try {
-      const page = await browser.newPage();
-      await page.goto(printUrl, { waitUntil: 'networkidle', timeout: 120000 });
-      
-      await page.pdf({
-        path: outputPath,
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '0.5in', bottom: '0.5in', left: '0.5in', right: '0.5in' },
-        scale: 1
-      });
-    } finally {
-      await browser.close();
-    }
     
     if (existsSync(outputPath)) {
       exportInProgress = false;
@@ -760,8 +758,9 @@ app.post('/api/export', async (_req: Request, res: Response) => {
     }
   } catch (err: any) {
     exportInProgress = false;
-    console.error('❌ Export failed:', err?.message || err);
-    res.status(500).json({ error: `Export failed: ${err?.message || 'Unknown error'}`.slice(0, 500) });
+    const errorMsg = err?.stderr?.toString() || err?.message || 'Unknown error';
+    console.error('❌ Export failed:', errorMsg);
+    res.status(500).json({ error: `Export failed: ${errorMsg}`.slice(0, 500) });
   }
 });
 
