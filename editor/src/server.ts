@@ -230,12 +230,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
-  pathRewrite: { '^/slidev': '' },
+  // DON'T rewrite path - Slidev with --base /slidev/ serves at /slidev/ path
   ws: true,  // Enable WebSocket proxy for HMR
   on: {
     proxyReq: (proxyReq, req, res) => {
       // Log proxy requests for debugging
-      console.log(`🔀 Proxy: ${req.method} ${req.url} -> ${SLIDEV_URL}`);
+      console.log(`🔀 Proxy: ${req.method} ${req.url} -> ${SLIDEV_URL}${req.url}`);
     },
     error: (err, req, res) => {
       console.error('❌ Proxy error:', err.message);
