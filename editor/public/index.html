@@ -35,27 +35,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
-    /* Custom scrollbar */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #1e293b; }
     ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-    
-    /* Smooth transitions */
     .transition-smooth { transition: all 0.2s ease; }
-    
-    /* Resizer grab effect */
     .resizer:active { background: #3b82f6 !important; }
-    
-    /* Loading spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
-    
-    /* Modal backdrop */
-    .modal-backdrop {
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-    }
+    .modal-backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
@@ -68,11 +56,24 @@
           <span class="text-2xl">📊</span>
           <h1 class="text-lg font-semibold text-white">Sli.dev Editor</h1>
         </div>
-        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded">Live</span>
+        <span id="storage-badge" class="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded">Loading...</span>
       </div>
       
       <div class="flex items-center gap-2">
-        <!-- History/Undo Button -->
+        <!-- File Selector (only shows with database) -->
+        <div id="file-selector" class="hidden relative">
+          <button id="btn-files" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+            </svg>
+            <span id="current-file-name">slides.md</span>
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- History Button -->
         <button id="btn-history" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Version History">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -94,7 +95,7 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          <span>Export PDF</span>
+          <span class="hidden md:inline">Export PDF</span>
         </button>
         
         <!-- Download MD -->
@@ -102,7 +103,6 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
-          <span class="hidden sm:inline">Download</span>
         </button>
       </div>
     </header>
@@ -117,7 +117,7 @@
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <span class="text-sm text-slate-400">slides.md</span>
+            <span id="file-label" class="text-sm text-slate-400">slides.md</span>
           </div>
           <div id="status" class="flex items-center gap-2 text-xs">
             <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
@@ -150,7 +150,7 @@
       </div>
     </main>
 
-    <!-- Footer Status Bar -->
+    <!-- Footer -->
     <footer class="flex items-center justify-between px-4 py-1.5 bg-slate-900 border-t border-slate-800 text-xs text-slate-500">
       <div class="flex items-center gap-4">
         <span>Markdown</span>
@@ -163,39 +163,50 @@
     </footer>
   </div>
 
-  <!-- History Modal -->
-  <div id="history-modal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop absolute inset-0" onclick="closeHistoryModal()"></div>
-    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
-      <!-- Modal Header -->
+  <!-- File Manager Modal -->
+  <div id="files-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeFilesModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-        <div class="flex items-center gap-3">
-          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <h2 class="text-lg font-semibold text-white">Version History</h2>
-        </div>
-        <button onclick="closeHistoryModal()" class="p-1 text-slate-400 hover:text-white rounded transition-smooth">
+        <h2 class="text-lg font-semibold text-white">Presentations</h2>
+        <button onclick="closeFilesModal()" class="p-1 text-slate-400 hover:text-white rounded">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
-      
-      <!-- Modal Body -->
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <input id="new-file-name" type="text" placeholder="new-presentation.md" class="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+          <button onclick="createNewFile()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">Create</button>
+        </div>
+        <div id="files-list" class="space-y-2 max-h-64 overflow-y-auto">
+          <p class="text-slate-500 text-center py-4">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal -->
+  <div id="history-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeHistoryModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Version History</h2>
+        <button onclick="closeHistoryModal()" class="p-1 text-slate-400 hover:text-white rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
       <div class="px-6 py-4">
         <p class="text-sm text-slate-400 mb-4">Each save creates a backup. Click to preview, then restore if needed.</p>
         <div id="history-list" class="space-y-2 max-h-64 overflow-y-auto">
           <p class="text-slate-500 text-center py-4">Loading...</p>
         </div>
       </div>
-      
-      <!-- Modal Footer -->
-      <div class="flex items-center justify-between px-6 py-4 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
+      <div class="px-6 py-4 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
         <span id="history-info" class="text-xs text-slate-500">Keeps last 10 versions</span>
-        <button onclick="closeHistoryModal()" class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-smooth">
-          Close
-        </button>
       </div>
     </div>
   </div>
@@ -208,11 +219,11 @@
     let slidevUrl = 'http://localhost:3030';
     let isDirty = false;
     let maxHistory = 10;
+    let hasDatabase = false;
+    let currentFileName = 'slides.md';
 
-    // Initialize Monaco Editor
-    require.config({ 
-      paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }
-    });
+    // Initialize
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
 
     require(['vs/editor/editor.main'], async function() {
       // Fetch config
@@ -220,14 +231,25 @@
         const config = await fetch('/api/config').then(r => r.json());
         slidevUrl = config.slidevUrl;
         maxHistory = config.maxHistory || 10;
+        hasDatabase = config.hasDatabase;
+        
+        // Update UI based on storage mode
+        const badge = document.getElementById('storage-badge');
+        if (hasDatabase) {
+          badge.textContent = '🗄️ Database';
+          badge.className = 'px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-400 rounded';
+          document.getElementById('file-selector').classList.remove('hidden');
+        } else {
+          badge.textContent = '📁 Local';
+          badge.className = 'px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded';
+        }
       } catch (e) {
-        console.warn('Could not fetch config, using defaults');
+        console.warn('Could not fetch config');
       }
 
-      // Load preview
       document.getElementById('preview-frame').src = slidevUrl;
 
-      // Create Monaco editor
+      // Create editor
       editor = monaco.editor.create(document.getElementById('editor-container'), {
         value: '# Loading...',
         language: 'markdown',
@@ -235,67 +257,53 @@
         fontSize: 14,
         fontFamily: "'Fira Code', monospace",
         fontLigatures: true,
-        minimap: { enabled: true, scale: 1 },
+        minimap: { enabled: true },
         wordWrap: 'on',
-        lineNumbers: 'on',
         automaticLayout: true,
-        padding: { top: 16, bottom: 16 },
-        scrollBeyondLastLine: false,
-        renderWhitespace: 'selection',
-        bracketPairColorization: { enabled: true },
-        guides: { bracketPairs: true },
-        smoothScrolling: true,
-        cursorBlinking: 'smooth',
-        cursorSmoothCaretAnimation: 'on'
+        padding: { top: 16 },
+        scrollBeyondLastLine: false
       });
 
-      // Load slides content
       await loadSlides();
 
-      // Track cursor position
       editor.onDidChangeCursorPosition((e) => {
-        document.getElementById('cursor-position').textContent = 
-          `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+        document.getElementById('cursor-position').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
       });
 
-      // Track content changes
       editor.onDidChangeModelContent(() => {
         isDirty = true;
-        const content = editor.getValue();
-        document.getElementById('char-count').textContent = `${content.length} characters`;
+        document.getElementById('char-count').textContent = `${editor.getValue().length} characters`;
         updateStatus('Modified', 'warning');
       });
 
-      // Keyboard shortcut: Ctrl/Cmd + S
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
-      
-      // Keyboard shortcut: Ctrl/Cmd + Z for undo (Monaco handles this, but we add history shortcut)
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyH, openHistoryModal);
     });
 
-    // Load slides from API
-    async function loadSlides() {
+    // Load slides
+    async function loadSlides(name = currentFileName) {
       try {
         updateStatus('Loading...', 'loading');
-        const res = await fetch('/api/slides');
+        const res = await fetch(`/api/slides?name=${encodeURIComponent(name)}`);
         const data = await res.json();
         
-        if (res.ok && data.content) {
+        if (res.ok && data.content !== undefined) {
           editor.setValue(data.content);
+          currentFileName = data.name || name;
+          document.getElementById('file-label').textContent = currentFileName;
+          document.getElementById('current-file-name').textContent = currentFileName;
           isDirty = false;
           document.getElementById('char-count').textContent = `${data.content.length} characters`;
           updateStatus('Ready', 'success');
         } else {
           updateStatus('Failed to load', 'error');
-          console.error('Load error:', data);
         }
       } catch (err) {
         updateStatus('Connection error', 'error');
-        console.error('Load error:', err);
+        console.error(err);
       }
     }
 
-    // Save slides to API
+    // Save slides
     async function saveSlides() {
       try {
         updateStatus('Saving...', 'loading');
@@ -304,179 +312,206 @@
         const res = await fetch('/api/slides', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ content, name: currentFileName })
         });
         
-        const data = await res.json();
-        
-        if (res.ok && data.success) {
+        if (res.ok) {
           isDirty = false;
           updateStatus('Saved ✓', 'success');
-          
-          // Refresh preview after brief delay
-          setTimeout(() => {
-            refreshPreview();
-          }, 300);
+          setTimeout(refreshPreview, 300);
         } else {
           updateStatus('Save failed', 'error');
-          console.error('Save error:', data);
         }
       } catch (err) {
         updateStatus('Save error', 'error');
-        console.error('Save error:', err);
+        console.error(err);
       }
     }
 
-    // Refresh preview iframe
     function refreshPreview() {
-      const iframe = document.getElementById('preview-frame');
-      iframe.src = slidevUrl;
+      document.getElementById('preview-frame').src = slidevUrl;
     }
 
-    // Export to PDF (opens Sli.dev print mode)
     function exportPdf() {
       window.open(slidevUrl + '?print', '_blank');
-      updateStatus('PDF export opened', 'success');
     }
 
-    // Download markdown file
     function downloadMd() {
       const content = editor.getValue();
       const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'slides.md';
-      document.body.appendChild(a);
+      a.download = currentFileName;
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      updateStatus('Downloaded', 'success');
     }
 
-    // Update status indicator
     function updateStatus(text, type) {
       const statusEl = document.getElementById('status');
-      const colors = {
-        success: 'bg-emerald-500',
-        warning: 'bg-amber-500',
-        error: 'bg-red-500',
-        loading: 'bg-blue-500'
-      };
+      const colors = { success: 'bg-emerald-500', warning: 'bg-amber-500', error: 'bg-red-500', loading: 'bg-blue-500' };
+      statusEl.innerHTML = `<span class="w-2 h-2 ${colors[type]} rounded-full ${type === 'loading' ? 'spinner' : ''}"></span><span class="text-slate-400">${text}</span>`;
+      if (type === 'success' && text !== 'Ready') setTimeout(() => updateStatus('Ready', 'success'), 2000);
+    }
+
+    // File management
+    async function openFilesModal() {
+      if (!hasDatabase) {
+        alert('Database required for multiple presentations');
+        return;
+      }
+      document.getElementById('files-modal').classList.remove('hidden');
+      await loadFilesList();
+    }
+
+    function closeFilesModal() {
+      document.getElementById('files-modal').classList.add('hidden');
+    }
+
+    async function loadFilesList() {
+      const listEl = document.getElementById('files-list');
+      listEl.innerHTML = '<p class="text-slate-500 text-center py-4">Loading...</p>';
       
-      statusEl.innerHTML = `
-        <span class="w-2 h-2 ${colors[type] || colors.success} rounded-full ${type === 'loading' ? 'spinner' : ''}"></span>
-        <span class="text-slate-400">${text}</span>
-      `;
-      
-      // Reset to ready after success
-      if (type === 'success' && text !== 'Ready') {
-        setTimeout(() => updateStatus('Ready', 'success'), 2000);
+      try {
+        const res = await fetch('/api/presentations');
+        const data = await res.json();
+        
+        if (!data.presentations || data.presentations.length === 0) {
+          listEl.innerHTML = '<p class="text-slate-500 text-center py-4">No presentations yet</p>';
+          return;
+        }
+        
+        listEl.innerHTML = data.presentations.map(p => `
+          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg group ${p.name === currentFileName ? 'ring-2 ring-blue-500' : ''}">
+            <button onclick="switchFile('${p.name}')" class="flex-1 text-left">
+              <span class="text-white">${p.name}</span>
+              ${p.name === currentFileName ? '<span class="ml-2 text-xs text-blue-400">(current)</span>' : ''}
+            </button>
+            ${p.name !== 'slides.md' ? `
+              <button onclick="deleteFile('${p.name}')" class="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            ` : ''}
+          </div>
+        `).join('');
+      } catch (err) {
+        listEl.innerHTML = '<p class="text-red-400 text-center py-4">Failed to load</p>';
       }
     }
 
-    // ==========================================
-    // HISTORY FUNCTIONS
-    // ==========================================
-    
+    async function switchFile(name) {
+      if (isDirty && !confirm('Unsaved changes will be lost. Continue?')) return;
+      currentFileName = name;
+      await loadSlides(name);
+      closeFilesModal();
+    }
+
+    async function createNewFile() {
+      const input = document.getElementById('new-file-name');
+      let name = input.value.trim();
+      if (!name) return;
+      if (!name.endsWith('.md')) name += '.md';
+      
+      try {
+        const res = await fetch('/api/presentations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, content: '---\ntheme: default\n---\n\n# New Presentation\n\nStart editing!' })
+        });
+        
+        if (res.ok) {
+          input.value = '';
+          await loadFilesList();
+          await switchFile(name);
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to create');
+        }
+      } catch (err) {
+        alert('Error creating presentation');
+      }
+    }
+
+    async function deleteFile(name) {
+      if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+      
+      try {
+        const res = await fetch(`/api/presentations/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        if (res.ok) {
+          if (currentFileName === name) {
+            await switchFile('slides.md');
+          }
+          await loadFilesList();
+        }
+      } catch (err) {
+        alert('Error deleting');
+      }
+    }
+
+    // History
     async function openHistoryModal() {
       document.getElementById('history-modal').classList.remove('hidden');
       document.getElementById('history-info').textContent = `Keeps last ${maxHistory} versions`;
       await loadHistory();
     }
-    
+
     function closeHistoryModal() {
       document.getElementById('history-modal').classList.add('hidden');
     }
-    
+
     async function loadHistory() {
       const listEl = document.getElementById('history-list');
       listEl.innerHTML = '<p class="text-slate-500 text-center py-4">Loading...</p>';
       
       try {
-        const res = await fetch('/api/history');
+        const res = await fetch(`/api/history?name=${encodeURIComponent(currentFileName)}`);
         const data = await res.json();
         
         if (!data.backups || data.backups.length === 0) {
-          listEl.innerHTML = `
-            <div class="text-center py-8">
-              <svg class="w-12 h-12 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <p class="text-slate-400">No backups yet</p>
-              <p class="text-slate-500 text-sm mt-1">Backups are created each time you save</p>
-            </div>
-          `;
+          listEl.innerHTML = '<p class="text-slate-500 text-center py-8">No backups yet. Backups are created each time you save.</p>';
           return;
         }
         
-        listEl.innerHTML = data.backups.map((backup, index) => `
-          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-smooth group">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 flex items-center justify-center bg-slate-700 rounded-full text-sm font-medium text-slate-300">
-                ${index + 1}
-              </div>
-              <div>
-                <p class="text-sm font-medium text-white">${backup.label}</p>
-                <p class="text-xs text-slate-500">${formatTimestamp(backup.timestamp)}</p>
-              </div>
+        listEl.innerHTML = data.backups.map((b, i) => `
+          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg group">
+            <div>
+              <p class="text-white text-sm">${b.label || `Backup ${i + 1}`}</p>
+              <p class="text-xs text-slate-500">${new Date(b.timestamp).toLocaleString()}</p>
             </div>
-            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
-              <button onclick="previewBackup(${backup.id})" class="px-3 py-1.5 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-smooth">
-                Preview
-              </button>
-              <button onclick="restoreBackup(${backup.id})" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-smooth">
-                Restore
-              </button>
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100">
+              <button onclick="previewBackup('${b.id}')" class="px-3 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded">Preview</button>
+              <button onclick="restoreBackup('${b.id}')" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded">Restore</button>
             </div>
           </div>
         `).join('');
-        
       } catch (err) {
         listEl.innerHTML = '<p class="text-red-400 text-center py-4">Failed to load history</p>';
-        console.error('History error:', err);
       }
     }
-    
-    function formatTimestamp(ts) {
-      try {
-        const date = new Date(ts);
-        return date.toLocaleString();
-      } catch {
-        return ts;
-      }
-    }
-    
+
     async function previewBackup(id) {
       try {
-        const res = await fetch(`/api/history/${id}`);
+        const res = await fetch(`/api/history/${id}?name=${encodeURIComponent(currentFileName)}`);
         const data = await res.json();
-        
         if (data.content) {
-          // Show in editor (but don't save)
           editor.setValue(data.content);
           isDirty = true;
-          updateStatus(`Previewing: ${data.backup.label}`, 'warning');
+          updateStatus('Previewing backup', 'warning');
           closeHistoryModal();
         }
       } catch (err) {
-        console.error('Preview error:', err);
         alert('Failed to load backup');
       }
     }
-    
+
     async function restoreBackup(id) {
-      if (!confirm('Restore this version? Your current work will be backed up first.')) {
-        return;
-      }
+      if (!confirm('Restore this version? Current content will be backed up first.')) return;
       
       try {
         updateStatus('Restoring...', 'loading');
-        
-        const res = await fetch(`/api/history/restore/${id}`, {
-          method: 'POST'
-        });
-        
+        const res = await fetch(`/api/history/restore/${id}?name=${encodeURIComponent(currentFileName)}`, { method: 'POST' });
         const data = await res.json();
         
         if (data.success && data.content) {
@@ -484,38 +519,34 @@
           isDirty = false;
           updateStatus('Restored ✓', 'success');
           closeHistoryModal();
-          
-          // Refresh preview
           setTimeout(refreshPreview, 300);
-        } else {
-          updateStatus('Restore failed', 'error');
         }
       } catch (err) {
         updateStatus('Restore error', 'error');
-        console.error('Restore error:', err);
       }
     }
 
-    // Button event listeners
+    // Event listeners
     document.getElementById('btn-save').addEventListener('click', saveSlides);
     document.getElementById('btn-export').addEventListener('click', exportPdf);
     document.getElementById('btn-download').addEventListener('click', downloadMd);
     document.getElementById('btn-refresh').addEventListener('click', refreshPreview);
     document.getElementById('btn-history').addEventListener('click', openHistoryModal);
+    document.getElementById('btn-files')?.addEventListener('click', openFilesModal);
 
-    // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeHistoryModal();
+        closeFilesModal();
       }
     });
 
-    // Resizable panels
+    // Resizer
     const resizer = document.getElementById('resizer');
     const editorPanel = document.getElementById('editor-panel');
     let isResizing = false;
 
-    resizer.addEventListener('mousedown', (e) => {
+    resizer.addEventListener('mousedown', () => {
       isResizing = true;
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
@@ -523,14 +554,9 @@
 
     document.addEventListener('mousemove', (e) => {
       if (!isResizing) return;
-      
       const container = document.querySelector('main');
-      const containerRect = container.getBoundingClientRect();
-      const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-      
-      if (newWidth > 20 && newWidth < 80) {
-        editorPanel.style.width = newWidth + '%';
-      }
+      const newWidth = ((e.clientX - container.getBoundingClientRect().left) / container.offsetWidth) * 100;
+      if (newWidth > 20 && newWidth < 80) editorPanel.style.width = newWidth + '%';
     });
 
     document.addEventListener('mouseup', () => {
@@ -539,12 +565,8 @@
       document.body.style.userSelect = '';
     });
 
-    // Warn before leaving with unsaved changes
     window.addEventListener('beforeunload', (e) => {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
+      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
     });
   </script>
 </body>

@@ -2,251 +2,467 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import path from 'path';
+import { Pool } from 'pg';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SLIDES_PATH = process.env.SLIDES_PATH || '/app/presentation/slides.md';
 const SLIDEV_URL = process.env.SLIDEV_URL || 'http://localhost:3030';
 const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
-const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10); // Keep last 10 versions
+const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10);
+const DATABASE_URL = process.env.DATABASE_URL || '';
 
-// History directory (next to slides.md)
+// Database connection (optional - falls back to file system if not configured)
+let db: Pool | null = null;
+
+const initDatabase = async () => {
+  if (!DATABASE_URL) {
+    console.log('📁 No DATABASE_URL - using file system storage');
+    return;
+  }
+
+  try {
+    db = new Pool({
+      connectionString: DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    });
+
+    // Create tables if they don't exist
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS presentations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS history (
+        id SERIAL PRIMARY KEY,
+        presentation_name VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_history_name ON history(presentation_name);
+      CREATE INDEX IF NOT EXISTS idx_history_created ON history(created_at DESC);
+    `);
+
+    console.log('🗄️  Database connected and initialized');
+    
+    // Migrate existing file to database if it exists
+    await migrateFileToDb();
+  } catch (err) {
+    console.error('Database connection failed:', err);
+    console.log('📁 Falling back to file system storage');
+    db = null;
+  }
+};
+
+// Migrate existing slides.md to database
+const migrateFileToDb = async () => {
+  if (!db) return;
+  
+  try {
+    // Check if default presentation exists in DB
+    const result = await db.query('SELECT id FROM presentations WHERE name = $1', ['slides.md']);
+    
+    if (result.rows.length === 0 && existsSync(SLIDES_PATH)) {
+      // Migrate file to database
+      const content = readFileSync(SLIDES_PATH, 'utf-8');
+      await db.query(
+        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
+        ['slides.md', content]
+      );
+      console.log('📥 Migrated slides.md to database');
+    }
+  } catch (err) {
+    console.error('Migration error:', err);
+  }
+};
+
+// ==========================================
+// FILE SYSTEM FUNCTIONS (fallback)
+// ==========================================
 const HISTORY_DIR = path.join(path.dirname(SLIDES_PATH), '.history');
 
-// Ensure history directory exists
 const ensureHistoryDir = () => {
   if (!existsSync(HISTORY_DIR)) {
     mkdirSync(HISTORY_DIR, { recursive: true });
   }
 };
 
-// Create a backup before saving
-const createBackup = () => {
+const createFileBackup = () => {
   ensureHistoryDir();
-  
-  if (!existsSync(SLIDES_PATH)) {
-    return; // Nothing to backup
-  }
+  if (!existsSync(SLIDES_PATH)) return;
 
   const content = readFileSync(SLIDES_PATH, 'utf-8');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupPath = path.join(HISTORY_DIR, `slides-${timestamp}.md`);
-  
   writeFileSync(backupPath, content, 'utf-8');
-  console.log(`Backup created: ${backupPath}`);
-  
-  // Clean up old backups (keep only MAX_HISTORY)
-  cleanupOldBackups();
+  cleanupOldFileBackups();
 };
 
-// Remove old backups beyond MAX_HISTORY
-const cleanupOldBackups = () => {
+const cleanupOldFileBackups = () => {
   const files = readdirSync(HISTORY_DIR)
     .filter(f => f.startsWith('slides-') && f.endsWith('.md'))
     .sort()
-    .reverse(); // Newest first
+    .reverse();
   
-  // Delete files beyond MAX_HISTORY
   files.slice(MAX_HISTORY).forEach(file => {
-    const filePath = path.join(HISTORY_DIR, file);
-    unlinkSync(filePath);
-    console.log(`Deleted old backup: ${file}`);
+    unlinkSync(path.join(HISTORY_DIR, file));
   });
 };
 
-// Get list of backups with metadata
-const getBackupList = () => {
+const getFileBackupList = () => {
   ensureHistoryDir();
-  
   const files = readdirSync(HISTORY_DIR)
     .filter(f => f.startsWith('slides-') && f.endsWith('.md'))
     .sort()
-    .reverse(); // Newest first
+    .reverse();
   
-  return files.map((file, index) => {
-    // Extract timestamp from filename: slides-2024-12-08T10-30-45-123Z.md
-    const match = file.match(/slides-(.+)\.md/);
-    const timestamp = match ? match[1].replace(/-/g, (m, offset) => {
-      // Restore colons and dots in timestamp
-      if (offset === 13 || offset === 16) return ':';
-      if (offset === 19) return '.';
-      return m;
-    }) : file;
-    
-    return {
-      id: index,
-      filename: file,
-      timestamp: timestamp,
-      label: index === 0 ? 'Latest backup' : `${index + 1} saves ago`
-    };
-  });
+  return files.map((file, index) => ({
+    id: index,
+    filename: file,
+    timestamp: file.replace('slides-', '').replace('.md', ''),
+    label: index === 0 ? 'Latest backup' : `${index + 1} saves ago`
+  }));
 };
 
-// Simple password authentication middleware
-const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Skip auth if no password is set (local development)
-  if (!EDITOR_PASSWORD) {
-    return next();
-  }
-
-  // Skip auth for health check endpoint
-  if (req.path === '/api/health') {
-    return next();
-  }
-
-  // Check for Basic Auth header
-  const authHeader = req.headers.authorization;
+// ==========================================
+// DATABASE FUNCTIONS
+// ==========================================
+const createDbBackup = async (name: string, content: string) => {
+  if (!db) return;
   
+  await db.query(
+    'INSERT INTO history (presentation_name, content) VALUES ($1, $2)',
+    [name, content]
+  );
+  
+  // Cleanup old backups
+  await db.query(`
+    DELETE FROM history WHERE id IN (
+      SELECT id FROM history 
+      WHERE presentation_name = $1 
+      ORDER BY created_at DESC 
+      OFFSET $2
+    )
+  `, [name, MAX_HISTORY]);
+};
+
+const getDbBackupList = async (name: string) => {
+  if (!db) return [];
+  
+  const result = await db.query(
+    'SELECT id, created_at FROM history WHERE presentation_name = $1 ORDER BY created_at DESC LIMIT $2',
+    [name, MAX_HISTORY]
+  );
+  
+  return result.rows.map((row, index) => ({
+    id: row.id,
+    timestamp: row.created_at,
+    label: index === 0 ? 'Latest backup' : `${index + 1} saves ago`
+  }));
+};
+
+// ==========================================
+// AUTHENTICATION
+// ==========================================
+const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (!EDITOR_PASSWORD) return next();
+  if (req.path === '/api/health') return next();
+
+  const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Basic ')) {
     res.setHeader('WWW-Authenticate', 'Basic realm="Sli.dev Editor"');
     return res.status(401).send('Authentication required');
   }
 
-  // Decode credentials (format: "Basic base64(username:password)")
   const base64Credentials = authHeader.split(' ')[1];
   const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
-  const [username, password] = credentials.split(':');
+  const [, password] = credentials.split(':');
 
-  // Check password (username can be anything)
-  if (password === EDITOR_PASSWORD) {
-    return next();
-  }
+  if (password === EDITOR_PASSWORD) return next();
 
   res.setHeader('WWW-Authenticate', 'Basic realm="Sli.dev Editor"');
   return res.status(401).send('Invalid credentials');
 };
 
-// Middleware
+// ==========================================
+// EXPRESS SETUP
+// ==========================================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(authMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API: Get configuration
+// ==========================================
+// API ENDPOINTS
+// ==========================================
+
+// Config
 app.get('/api/config', (_req: Request, res: Response) => {
   res.json({ 
     slidevUrl: SLIDEV_URL,
     appName: 'Sli.dev Editor',
-    maxHistory: MAX_HISTORY
+    maxHistory: MAX_HISTORY,
+    hasDatabase: !!db
   });
 });
 
-// API: Get slides content
-app.get('/api/slides', (_req: Request, res: Response) => {
+// List all presentations
+app.get('/api/presentations', async (_req: Request, res: Response) => {
   try {
-    if (!existsSync(SLIDES_PATH)) {
-      console.error(`Slides file not found at: ${SLIDES_PATH}`);
-      return res.status(404).json({ error: 'slides.md not found', path: SLIDES_PATH });
+    if (db) {
+      const result = await db.query('SELECT name, updated_at FROM presentations ORDER BY updated_at DESC');
+      res.json({ presentations: result.rows });
+    } else {
+      // File system: just return the default file
+      res.json({ presentations: [{ name: 'slides.md', updated_at: new Date() }] });
     }
-    const content = readFileSync(SLIDES_PATH, 'utf-8');
-    res.json({ content, path: SLIDES_PATH });
   } catch (err) {
-    console.error('Failed to read slides:', err);
-    res.status(500).json({ error: 'Failed to read slides' });
+    console.error('List presentations error:', err);
+    res.status(500).json({ error: 'Failed to list presentations' });
   }
 });
 
-// API: Save slides content (with automatic backup)
-app.post('/api/slides', (req: Request, res: Response) => {
+// Get slides content
+app.get('/api/slides', async (req: Request, res: Response) => {
+  const name = (req.query.name as string) || 'slides.md';
+  
   try {
-    const { content } = req.body;
-    if (typeof content !== 'string') {
-      return res.status(400).json({ error: 'Content must be a string' });
+    if (db) {
+      const result = await db.query('SELECT content FROM presentations WHERE name = $1', [name]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Presentation not found' });
+      }
+      res.json({ content: result.rows[0].content, name });
+    } else {
+      if (!existsSync(SLIDES_PATH)) {
+        return res.status(404).json({ error: 'slides.md not found' });
+      }
+      const content = readFileSync(SLIDES_PATH, 'utf-8');
+      res.json({ content, name: 'slides.md' });
+    }
+  } catch (err) {
+    console.error('Get slides error:', err);
+    res.status(500).json({ error: 'Failed to get slides' });
+  }
+});
+
+// Save slides content
+app.post('/api/slides', async (req: Request, res: Response) => {
+  const { content, name = 'slides.md' } = req.body;
+  
+  if (typeof content !== 'string') {
+    return res.status(400).json({ error: 'Content must be a string' });
+  }
+  
+  try {
+    if (db) {
+      // Get current content for backup
+      const current = await db.query('SELECT content FROM presentations WHERE name = $1', [name]);
+      if (current.rows.length > 0) {
+        await createDbBackup(name, current.rows[0].content);
+      }
+      
+      // Upsert presentation
+      await db.query(`
+        INSERT INTO presentations (name, content, updated_at) 
+        VALUES ($1, $2, CURRENT_TIMESTAMP)
+        ON CONFLICT (name) 
+        DO UPDATE SET content = $2, updated_at = CURRENT_TIMESTAMP
+      `, [name, content]);
+    } else {
+      createFileBackup();
+      writeFileSync(SLIDES_PATH, content, 'utf-8');
     }
     
-    // Create backup before saving
-    createBackup();
-    
-    // Save new content
+    // Also write to file system so Sli.dev can read it
     writeFileSync(SLIDES_PATH, content, 'utf-8');
-    console.log(`Slides saved to: ${SLIDES_PATH}`);
-    res.json({ success: true, message: 'Saved! Sli.dev will auto-reload.' });
+    
+    res.json({ success: true, message: 'Saved!' });
   } catch (err) {
-    console.error('Failed to save slides:', err);
-    res.status(500).json({ error: 'Failed to save slides' });
+    console.error('Save error:', err);
+    res.status(500).json({ error: 'Failed to save' });
   }
 });
 
-// API: Get backup history list
-app.get('/api/history', (_req: Request, res: Response) => {
+// Create new presentation
+app.post('/api/presentations', async (req: Request, res: Response) => {
+  const { name, content = '' } = req.body;
+  
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+  
   try {
-    const backups = getBackupList();
-    res.json({ backups, maxHistory: MAX_HISTORY });
+    if (db) {
+      await db.query(
+        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
+        [name, content]
+      );
+      res.json({ success: true, name });
+    } else {
+      res.status(400).json({ error: 'Database required for multiple presentations' });
+    }
+  } catch (err: any) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Presentation already exists' });
+    }
+    console.error('Create presentation error:', err);
+    res.status(500).json({ error: 'Failed to create presentation' });
+  }
+});
+
+// Delete presentation
+app.delete('/api/presentations/:name', async (req: Request, res: Response) => {
+  const { name } = req.params;
+  
+  if (name === 'slides.md') {
+    return res.status(400).json({ error: 'Cannot delete default presentation' });
+  }
+  
+  try {
+    if (db) {
+      await db.query('DELETE FROM history WHERE presentation_name = $1', [name]);
+      await db.query('DELETE FROM presentations WHERE name = $1', [name]);
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: 'Database required' });
+    }
   } catch (err) {
-    console.error('Failed to get history:', err);
+    console.error('Delete error:', err);
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+// Get history
+app.get('/api/history', async (req: Request, res: Response) => {
+  const name = (req.query.name as string) || 'slides.md';
+  
+  try {
+    if (db) {
+      const backups = await getDbBackupList(name);
+      res.json({ backups, maxHistory: MAX_HISTORY });
+    } else {
+      const backups = getFileBackupList();
+      res.json({ backups, maxHistory: MAX_HISTORY });
+    }
+  } catch (err) {
+    console.error('History error:', err);
     res.status(500).json({ error: 'Failed to get history' });
   }
 });
 
-// API: Get specific backup content
-app.get('/api/history/:id', (req: Request, res: Response) => {
+// Get specific backup
+app.get('/api/history/:id', async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const name = (req.query.name as string) || 'slides.md';
+  
   try {
-    const id = parseInt(req.params.id, 10);
-    const backups = getBackupList();
-    
-    if (id < 0 || id >= backups.length) {
-      return res.status(404).json({ error: 'Backup not found' });
+    if (db) {
+      const result = await db.query('SELECT content, created_at FROM history WHERE id = $1', [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Backup not found' });
+      }
+      res.json({ content: result.rows[0].content, timestamp: result.rows[0].created_at });
+    } else {
+      const backups = getFileBackupList();
+      const idx = parseInt(id, 10);
+      if (idx < 0 || idx >= backups.length) {
+        return res.status(404).json({ error: 'Backup not found' });
+      }
+      const filePath = path.join(HISTORY_DIR, backups[idx].filename);
+      const content = readFileSync(filePath, 'utf-8');
+      res.json({ content, backup: backups[idx] });
     }
-    
-    const backup = backups[id];
-    const filePath = path.join(HISTORY_DIR, backup.filename);
-    const content = readFileSync(filePath, 'utf-8');
-    
-    res.json({ content, backup });
   } catch (err) {
-    console.error('Failed to get backup:', err);
+    console.error('Get backup error:', err);
     res.status(500).json({ error: 'Failed to get backup' });
   }
 });
 
-// API: Restore from backup
-app.post('/api/history/restore/:id', (req: Request, res: Response) => {
+// Restore from backup
+app.post('/api/history/restore/:id', async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const name = (req.query.name as string) || 'slides.md';
+  
   try {
-    const id = parseInt(req.params.id, 10);
-    const backups = getBackupList();
+    let restoredContent: string;
     
-    if (id < 0 || id >= backups.length) {
-      return res.status(404).json({ error: 'Backup not found' });
+    if (db) {
+      // Get backup content
+      const backup = await db.query('SELECT content FROM history WHERE id = $1', [id]);
+      if (backup.rows.length === 0) {
+        return res.status(404).json({ error: 'Backup not found' });
+      }
+      restoredContent = backup.rows[0].content;
+      
+      // Backup current content first
+      const current = await db.query('SELECT content FROM presentations WHERE name = $1', [name]);
+      if (current.rows.length > 0) {
+        await createDbBackup(name, current.rows[0].content);
+      }
+      
+      // Restore
+      await db.query(
+        'UPDATE presentations SET content = $1, updated_at = CURRENT_TIMESTAMP WHERE name = $2',
+        [restoredContent, name]
+      );
+    } else {
+      const backups = getFileBackupList();
+      const idx = parseInt(id, 10);
+      if (idx < 0 || idx >= backups.length) {
+        return res.status(404).json({ error: 'Backup not found' });
+      }
+      
+      createFileBackup();
+      const filePath = path.join(HISTORY_DIR, backups[idx].filename);
+      restoredContent = readFileSync(filePath, 'utf-8');
+      writeFileSync(SLIDES_PATH, restoredContent, 'utf-8');
     }
     
-    // Create backup of current state before restoring
-    createBackup();
+    // Write to file system for Sli.dev
+    writeFileSync(SLIDES_PATH, restoredContent, 'utf-8');
     
-    const backup = backups[id];
-    const filePath = path.join(HISTORY_DIR, backup.filename);
-    const content = readFileSync(filePath, 'utf-8');
-    
-    // Restore
-    writeFileSync(SLIDES_PATH, content, 'utf-8');
-    console.log(`Restored from backup: ${backup.filename}`);
-    
-    res.json({ success: true, message: `Restored from: ${backup.label}`, content });
+    res.json({ success: true, content: restoredContent });
   } catch (err) {
-    console.error('Failed to restore:', err);
-    res.status(500).json({ error: 'Failed to restore from backup' });
+    console.error('Restore error:', err);
+    res.status(500).json({ error: 'Failed to restore' });
   }
 });
 
-// API: Health check
+// Health check
 app.get('/api/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), hasDatabase: !!db });
 });
 
-// Serve frontend for all other routes
+// Serve frontend
 app.get('*', (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`
+// ==========================================
+// START SERVER
+// ==========================================
+const start = async () => {
+  await initDatabase();
+  
+  app.listen(PORT, () => {
+    console.log(`
 ╔═══════════════════════════════════════════════════╗
 ║           Sli.dev Editor Server                   ║
 ╠═══════════════════════════════════════════════════╣
-║  Editor:    http://localhost:${PORT}              ║
-║  Sli.dev:   ${SLIDEV_URL}                         ║
-║  Slides:    ${SLIDES_PATH}                        ║
-║  History:   ${MAX_HISTORY} backups                ║
-║  Auth:      ${EDITOR_PASSWORD ? '🔒 Password protected' : '🔓 Open (no password set)'}
+║  Editor:    http://localhost:${PORT}              
+║  Sli.dev:   ${SLIDEV_URL}
+║  Storage:   ${db ? '🗄️  PostgreSQL' : '📁 File System'}
+║  History:   ${MAX_HISTORY} backups
+║  Auth:      ${EDITOR_PASSWORD ? '🔒 Password protected' : '🔓 Open'}
 ╚═══════════════════════════════════════════════════╝
-  `);
-});
+    `);
+  });
+};
+
+start();

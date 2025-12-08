@@ -60,7 +60,7 @@ echo "Editor will run on port: $PORT"\n\
 echo "========================================"\n\
 \n\
 # Start Sli.dev in background, redirect output to hide port 3030 from Railway\n\
-cd /app/presentation && npm run dev > /tmp/slidev.log 2>&1 &\n\
+cd /app/presentation && NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
 SLIDEV_PID=$!\n\
 \n\
 # Wait for Sli.dev to be ready\n\
@@ -79,6 +79,7 @@ cd /app/editor && exec npm start\n\
 ENV SLIDES_PATH=/app/presentation/slides.md
 ENV SLIDEV_URL=http://localhost:3030
 ENV CHOKIDAR_USEPOLLING=true
+ENV NODE_NO_WARNINGS=1
 # EDITOR_PASSWORD and MAX_HISTORY should be set in Railway dashboard
 
 # Health check uses the PORT environment variable
