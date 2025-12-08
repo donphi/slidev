@@ -291,31 +291,34 @@ app.use(authMiddleware);
 
 // Explicit route for help.md to avoid static path issues
 app.get('/help.md', (_req: Request, res: Response) => {
-  // Try multiple possible locations
+  // Try multiple possible locations for different environments
   const possiblePaths = [
-    path.join(__dirname, '..', 'public', 'help.md'),  // Dev/Prod: src/../public or dist/../public
-    path.join(__dirname, 'public', 'help.md'),        // Fallback: __dirname/public
-    '/app/editor/public/help.md'                       // Docker path
+    path.join(__dirname, 'public', 'help.md'),        // Docker: dist/public/help.md
+    path.join(__dirname, '..', 'public', 'help.md'),  // Dev (tsx): src/../public
+    '/app/editor/dist/public/help.md'                  // Docker absolute fallback
   ];
   
+  console.log('🔍 Looking for help.md in:', possiblePaths);
+  
   for (const helpPath of possiblePaths) {
+    console.log(`   Checking: ${helpPath} - exists: ${existsSync(helpPath)}`);
     if (existsSync(helpPath)) {
       res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
       return res.sendFile(helpPath);
     }
   }
   
-  res.status(404).send('Help file not found');
+  res.status(404).json({ error: 'Help file not found', searched: possiblePaths });
 });
 
 // Static files - try multiple paths for different environments
 const possiblePublicPaths = [
-  path.join(__dirname, '..', 'public'),  // Dev: src/../public, Prod: dist/../public
-  path.join(__dirname, 'public'),        // Fallback
-  '/app/editor/public'                   // Docker
+  path.join(__dirname, 'public'),        // Docker: dist/public (COPY editor/public ./dist/public)
+  path.join(__dirname, '..', 'public'),  // Dev (tsx): src/../public
+  '/app/editor/dist/public'              // Docker absolute fallback
 ];
 const publicPath = possiblePublicPaths.find(p => existsSync(p)) || possiblePublicPaths[0];
-console.log('📂 Serving static files from:', publicPath);
+console.log('📂 Serving static files from:', publicPath, '- exists:', existsSync(publicPath));
 app.use(express.static(publicPath));
 
 // ==========================================
