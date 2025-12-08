@@ -22,9 +22,12 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Copy and install presentation dependencies
 COPY presentation/package.json ./
-RUN npm install
+# Use --include=dev to ensure playwright-chromium is installed even if NODE_ENV=production
+RUN npm install --include=dev
 
-# Install Playwright browser for PDF export
+# Install Playwright browser and system dependencies for PDF export
+# install-deps: installs system libraries (libatk, libnss, fonts, etc.)
+# install chromium: downloads the Chromium browser binary
 RUN npx playwright install-deps chromium && \
     npx playwright install chromium
 

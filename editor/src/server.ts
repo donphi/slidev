@@ -266,13 +266,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ==========================================
 let slidevRestarting = false;
 
-app.use('/slidev', createProxyMiddleware({
+// Create proxy middleware for Slidev
+const slidevProxy = createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
   ws: true,
+  // Preserve the /slidev base path
   pathRewrite: (p) => p.startsWith('/slidev') ? p : `/slidev${p}`,
   on: {
-    proxyRes: () => { slidevRestarting = false; },
+    proxyRes: (proxyRes) => { 
+      slidevRestarting = false;
+      // Remove problematic headers that can cause issues
+      delete proxyRes.headers['content-security-policy'];
+    },
     error: (_err, _req, res) => {
       slidevRestarting = true;
       // Send simple error page
@@ -287,7 +293,9 @@ app.use('/slidev', createProxyMiddleware({
       }
     }
   }
-}));
+});
+
+app.use('/slidev', slidevProxy);
 
 // ==========================================
 // API ENDPOINTS
@@ -779,17 +787,21 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   }
   
   try {
-    // Use Slidev's built-in export command (recommended approach)
-    // Run slidev export with timeout and proper options
-    // --timeout: allow enough time for complex presentations
-    // --output: specify output file name
-    execSync('npx slidev export --output slides-export.pdf --timeout 120000', {
+    // Use Slidev's built-in export command (per official docs: https://sli.dev/guide/exporting)
+    // Options:
+    //   --output: output filename
+    //   --timeout: Playwright timeout per slide (ms)
+    //   --wait-until load: faster than 'networkidle' default, prevents timeout issues
+    //
+    // Note: Export spawns its own dev server + Playwright/Chromium which is memory-intensive.
+    // On constrained environments (Railway free tier), this may fail with OOM.
+    // Alternative: Use the browser exporter at /slidev/export (uses running server).
+    execSync('npx slidev export --output slides-export.pdf --timeout 60000 --wait-until load', {
       cwd: SLIDEV_DIR,
-      timeout: 180000, // 3 minute timeout for the entire process
+      timeout: 300000, // 5 minute total process timeout
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        // Ensure Playwright can find browsers
         PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH || '/ms-playwright',
       }
     });
@@ -862,8 +874,15 @@ const start = async () => {
   console.log(`   style.css exists: ${existsSync(STYLE_PATH)}`);
   
   // START SERVER FIRST - so healthcheck passes immediately
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`✅ Server listening on port ${PORT}`);
+  });
+  
+  // Handle WebSocket upgrade for Vite HMR (needed for export page to load)
+  server.on('upgrade', (req, socket, head) => {
+    if (req.url?.startsWith('/slidev')) {
+      slidevProxy.upgrade(req, socket, head);
+    }
   });
   
   // THEN connect to database (non-blocking)
