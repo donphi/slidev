@@ -288,8 +288,33 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(authMiddleware);
-// Static files - go up from src/ or dist/ to editor/public
-const publicPath = path.join(__dirname, '..', 'public');
+
+// Explicit route for help.md to avoid static path issues
+app.get('/help.md', (_req: Request, res: Response) => {
+  // Try multiple possible locations
+  const possiblePaths = [
+    path.join(__dirname, '..', 'public', 'help.md'),  // Dev/Prod: src/../public or dist/../public
+    path.join(__dirname, 'public', 'help.md'),        // Fallback: __dirname/public
+    '/app/editor/public/help.md'                       // Docker path
+  ];
+  
+  for (const helpPath of possiblePaths) {
+    if (existsSync(helpPath)) {
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      return res.sendFile(helpPath);
+    }
+  }
+  
+  res.status(404).send('Help file not found');
+});
+
+// Static files - try multiple paths for different environments
+const possiblePublicPaths = [
+  path.join(__dirname, '..', 'public'),  // Dev: src/../public, Prod: dist/../public
+  path.join(__dirname, 'public'),        // Fallback
+  '/app/editor/public'                   // Docker
+];
+const publicPath = possiblePublicPaths.find(p => existsSync(p)) || possiblePublicPaths[0];
 console.log('📂 Serving static files from:', publicPath);
 app.use(express.static(publicPath));
 

@@ -908,6 +908,10 @@ Questions?
           isDirty = false;
           isLoadingContent = false;
           document.getElementById('char-count').textContent = `${data.content.length} characters`;
+          
+          // Sync to file so Slidev shows the loaded presentation immediately
+          await syncToFile(data.content);
+          
           updateStatus('Ready', 'success');
         } else {
           updateStatus('Failed to load', 'error');
@@ -916,6 +920,19 @@ Questions?
         isLoadingContent = false;
         updateStatus('Connection error', 'error');
         console.error(err);
+      }
+    }
+    
+    // Silently sync content to file (for Slidev to pick up) without full save
+    async function syncToFile(content) {
+      try {
+        await fetch('/api/slides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content, name: currentFileName, syncOnly: true })
+        });
+      } catch (err) {
+        console.log('Sync to file failed (non-critical):', err);
       }
     }
 
@@ -1222,10 +1239,27 @@ Questions?
             stylesIsDirty = false;
             isLoadingStyles = false;
           }
+          
+          // Sync theme to file so Slidev shows correct styles immediately
+          await syncStyleToFile(themeData.content);
+          
           updateThemeUI();
         }
       } catch (err) {
         console.error('Failed to load theme:', err);
+      }
+    }
+    
+    // Silently sync theme/CSS to file for Slidev
+    async function syncStyleToFile(content) {
+      try {
+        await fetch('/api/styles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+      } catch (err) {
+        console.log('Style sync failed (non-critical):', err);
       }
     }
 
