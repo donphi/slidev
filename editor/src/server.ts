@@ -282,20 +282,24 @@ app.use('/slidev', createProxyMiddleware({
       }
       
       // Send a friendly error response if we can
-      if (res && !res.headersSent && 'writeHead' in res) {
+      // Note: res can be ServerResponse or Socket - only ServerResponse has writeHead
+      if (res && typeof (res as any).writeHead === 'function') {
         try {
-          (res as any).writeHead(503, { 'Content-Type': 'text/html' });
-          (res as any).end(`
-            <html>
-              <body style="font-family: system-ui; padding: 40px; text-align: center;">
-                <h2>⏳ Slidev is restarting...</h2>
-                <p>This happens after saving changes. Please wait a moment.</p>
-                <p><button onclick="location.reload()">Refresh</button></p>
-              </body>
-            </html>
-          `);
+          const httpRes = res as any;
+          if (!httpRes.headersSent) {
+            httpRes.writeHead(503, { 'Content-Type': 'text/html' });
+            httpRes.end(`
+              <html>
+                <body style="font-family: system-ui; padding: 40px; text-align: center;">
+                  <h2>⏳ Slidev is restarting...</h2>
+                  <p>This happens after saving changes. Please wait a moment.</p>
+                  <p><button onclick="location.reload()">Refresh</button></p>
+                </body>
+              </html>
+            `);
+          }
         } catch (e) {
-          // Response already sent, ignore
+          // Response already sent or socket closed, ignore
         }
       }
     }
