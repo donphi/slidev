@@ -230,12 +230,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
-  // DON'T rewrite path - Slidev with --base /slidev/ serves at /slidev/ path
+  // Express strips mount path from req.url, so we need to add /slidev back
+  // /foo -> /slidev/foo (so Vite with --base /slidev/ receives correct path)
+  pathRewrite: { '^/': '/slidev/' },
   ws: true,  // Enable WebSocket proxy for HMR
   on: {
     proxyReq: (proxyReq, req, res) => {
-      // Log proxy requests for debugging
-      console.log(`🔀 Proxy: ${req.method} ${req.url} -> ${SLIDEV_URL}${req.url}`);
+      // Log proxy requests for debugging (shows path AFTER rewrite)
+      console.log(`🔀 Proxy: ${req.method} /slidev${req.url} -> ${SLIDEV_URL}/slidev${req.url}`);
     },
     error: (err, req, res) => {
       console.error('❌ Proxy error:', err.message);
