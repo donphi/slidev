@@ -675,23 +675,36 @@ const findExportedPdf = (): string | null => {
   return null;
 };
 
-// API: Export to PDF
+// API: Export to PDF using WeasyPrint
+// WeasyPrint converts HTML to PDF - reliable in containers, no browser sandbox issues
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
     return res.status(409).json({ error: 'Export already in progress. Please wait.' });
   }
   
   exportInProgress = true;
-  console.log('📄 Starting PDF export...');
-  console.log(`   Sli.dev directory: ${SLIDEV_DIR}`);
-  console.log(`   Expected output: ${PDF_PATH}`);
+  const outputPath = path.join(SLIDEV_DIR, 'slides-export.pdf');
+  
+  console.log('📄 Starting PDF export with WeasyPrint...');
+  console.log(`   Source: ${SLIDEV_URL}/?print`);
+  console.log(`   Output: ${outputPath}`);
   
   try {
-    // Run slidev export command from SLIDEV_DIR (where npm packages are)
-    const exportCmd = `cd ${SLIDEV_DIR} && npm run export 2>&1`;
+    // Use WeasyPrint to convert Sli.dev's print view to PDF
+    // The ?print URL renders all slides in a print-friendly format
+    const printUrl = `${SLIDEV_URL}/?print`;
+    
+    // WeasyPrint command with optimizations for presentations
+    // -s A4 sets page size, --presentational-hints respects CSS
+    const exportCmd = `weasyprint "${printUrl}" "${outputPath}" --presentational-hints 2>&1`;
+    
+    console.log('   Running:', exportCmd);
     
     const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
-      exec(exportCmd, { timeout: 180000 }, (error, stdout, stderr) => {
+      exec(exportCmd, { 
+        timeout: 120000, // 2 minutes should be plenty
+        env: process.env
+      }, (error, stdout, stderr) => {
         if (error) {
           reject({ error, stdout, stderr });
         } else {
@@ -700,24 +713,20 @@ app.post('/api/export', async (_req: Request, res: Response) => {
       });
     });
     
-    console.log('📄 Export command completed');
-    console.log('   stdout:', result.stdout.slice(0, 500));
+    console.log('📄 WeasyPrint completed');
+    if (result.stdout) console.log('   stdout:', result.stdout);
+    if (result.stderr) console.log('   stderr:', result.stderr);
     
     // Check if PDF was created
-    const createdPdf = findExportedPdf();
-    if (createdPdf) {
+    if (existsSync(outputPath)) {
       exportInProgress = false;
-      console.log('✅ PDF file created:', createdPdf);
+      const stats = require('fs').statSync(outputPath);
+      console.log(`✅ PDF created: ${outputPath} (${Math.round(stats.size / 1024)} KB)`);
       res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
     } else {
       exportInProgress = false;
-      console.error('❌ No PDF file found in:', SLIDEV_DIR);
-      // List directory contents for debugging
-      try {
-        const files = readdirSync(SLIDEV_DIR);
-        console.error('   Directory contents:', files.join(', '));
-      } catch (e) { /* ignore */ }
-      res.status(500).json({ error: 'PDF file not created. Export may have completed but file is missing.' });
+      console.error('❌ PDF file not created');
+      res.status(500).json({ error: 'PDF file not created. Check server logs.' });
     }
   } catch (err: any) {
     exportInProgress = false;
@@ -726,20 +735,10 @@ app.post('/api/export', async (_req: Request, res: Response) => {
     const stderr = err?.stderr || '';
     
     console.error('❌ Export failed:', errorMsg);
-    console.error('   stdout:', stdout.slice(0, 500));
-    console.error('   stderr:', stderr.slice(0, 500));
+    if (stdout) console.error('   stdout:', stdout);
+    if (stderr) console.error('   stderr:', stderr);
     
-    // Provide helpful error message
-    let userMessage = 'Export failed';
-    if (stderr.includes('playwright') || stderr.includes('chromium')) {
-      userMessage = 'Export failed: Chromium browser issue. Try again or check server logs.';
-    } else if (stderr.includes('timeout')) {
-      userMessage = 'Export timed out. The presentation may be too large.';
-    } else if (stdout.includes('error') || stderr.includes('error')) {
-      userMessage = `Export failed: ${stderr.slice(0, 200) || stdout.slice(0, 200)}`;
-    }
-    
-    res.status(500).json({ error: userMessage });
+    res.status(500).json({ error: `Export failed: ${stderr || stdout || errorMsg}`.slice(0, 300) });
   }
 });
 
