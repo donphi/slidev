@@ -275,7 +275,6 @@ app.use('/slidev', createProxyMiddleware({
   changeOrigin: true,
   ws: true,
   pathRewrite: (p) => p.startsWith('/slidev') ? p : `/slidev${p}`,
-  logLevel: 'silent',
   on: {
     proxyRes: () => { slidevRestarting = false; },
     error: (_err, _req, res) => {
