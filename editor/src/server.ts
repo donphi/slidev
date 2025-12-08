@@ -303,9 +303,9 @@ const slidevProxy = createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
   ws: true,
-  // Express strips /slidev when passing to middleware, but Slidev expects /slidev/ prefix
-  // So we add it back: /export → /slidev/export
-  pathRewrite: (path) => `/slidev${path}`,
+  // Express strips /slidev for HTTP, but WebSocket upgrades may still have it
+  // Only add /slidev prefix if not already present
+  pathRewrite: (path) => path.startsWith('/slidev') ? path : `/slidev${path}`,
   on: {
     proxyRes: (proxyRes) => { 
       slidevRestarting = false;
