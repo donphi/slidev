@@ -29,16 +29,20 @@ const initDatabase = async () => {
   }
 
   try {
+    // Always use SSL for remote databases (Railway, Heroku, etc.)
+    // Only skip SSL for localhost connections
+    const isLocalhost = DATABASE_URL.includes('localhost') || DATABASE_URL.includes('127.0.0.1');
+    
     db = new Pool({
       connectionString: DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-      connectionTimeoutMillis: 10000,  // 10 second timeout - don't hang forever
+      ssl: isLocalhost ? false : { rejectUnauthorized: false },
+      connectionTimeoutMillis: 15000,  // 15 second timeout
       idleTimeoutMillis: 30000,
       max: 10
     });
     
-    // Test connection with timeout
     console.log('🔄 Connecting to database...');
+    console.log(`   SSL: ${isLocalhost ? 'disabled (localhost)' : 'enabled'}`);
 
     // Create tables if they don't exist
     await db.query(`
