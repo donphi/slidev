@@ -12,9 +12,11 @@ WORKDIR /app
 RUN npm install -g concurrently
 
 # ==========================================
-# PRESENTATION (Sli.dev)
+# PRESENTATION TEMPLATE (built files)
+# We build to a template directory, then copy to presentation on first run
+# This allows Railway volumes to work while preserving built files
 # ==========================================
-WORKDIR /app/presentation
+WORKDIR /app/presentation-template
 
 # Copy and install presentation dependencies
 COPY presentation/package.json ./
@@ -48,12 +50,46 @@ COPY editor/public ./dist/public
 # ==========================================
 WORKDIR /app
 
-# Create startup script that respects Railway's PORT variable
-# IMPORTANT: Start Sli.dev in background SILENTLY so Railway doesn't detect port 3030
-# Editor runs on $PORT (Railway assigns this) - this is the exposed service
+# Create startup script that:
+# 1. Ensures presentation directory has all required files (copies from template if needed)
+# 2. Starts Sli.dev in background
+# 3. Starts Editor in foreground
 RUN echo '#!/bin/bash\n\
 set -e\n\
 export PORT=${PORT:-3000}\n\
+\n\
+echo "========================================"\n\
+echo "Sli.dev Editor - Railway Deployment"\n\
+echo "========================================"\n\
+\n\
+# Ensure presentation directory exists and has required files\n\
+echo "Checking presentation directory..."\n\
+mkdir -p /app/presentation\n\
+\n\
+# If package.json is missing, copy all template files\n\
+if [ ! -f /app/presentation/package.json ]; then\n\
+  echo "Initializing presentation directory from template..."\n\
+  cp -r /app/presentation-template/* /app/presentation/\n\
+  echo "Done! Presentation files initialized."\n\
+else\n\
+  echo "Presentation directory already initialized."\n\
+  # Still sync any missing static files (layouts, components, etc)\n\
+  # but preserve user-edited files (slides.md, style.css)\n\
+  for dir in layouts components styles public node_modules; do\n\
+    if [ -d /app/presentation-template/$dir ] && [ ! -d /app/presentation/$dir ]; then\n\
+      echo "Syncing missing directory: $dir"\n\
+      cp -r /app/presentation-template/$dir /app/presentation/\n\
+    fi\n\
+  done\n\
+  # Ensure package.json and config files are up to date\n\
+  cp /app/presentation-template/package.json /app/presentation/\n\
+  cp /app/presentation-template/vite.config.ts /app/presentation/ 2>/dev/null || true\n\
+fi\n\
+\n\
+# List what we have\n\
+echo "Presentation directory contents:"\n\
+ls -la /app/presentation/\n\
+\n\
 echo "========================================"\n\
 echo "Starting services..."\n\
 echo "Editor will run on port: $PORT"\n\
@@ -66,6 +102,12 @@ SLIDEV_PID=$!\n\
 # Wait for Sli.dev to be ready\n\
 echo "Waiting for Sli.dev to start..."\n\
 sleep 5\n\
+\n\
+# Check if Sli.dev started\n\
+if ! kill -0 $SLIDEV_PID 2>/dev/null; then\n\
+  echo "WARNING: Sli.dev may have failed to start. Check /tmp/slidev.log"\n\
+  cat /tmp/slidev.log | tail -20\n\
+fi\n\
 \n\
 # Start Editor in foreground (Railway will detect this port)\n\
 echo "Starting Editor on port $PORT"\n\
@@ -88,4 +130,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
 
 # Start both services (editor in foreground to keep container alive)
 CMD ["/app/start.sh"]
-
