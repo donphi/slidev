@@ -3,7 +3,8 @@ import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
-import puppeteer from 'puppeteer-core';
+import { exec } from 'child_process';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -222,13 +223,35 @@ app.use(authMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==========================================
+// SLIDEV PROXY
+// Proxy /slidev/* requests to the internal Slidev server
+// This allows external users to access Slidev through the editor
+// ==========================================
+app.use('/slidev', createProxyMiddleware({
+  target: SLIDEV_URL,
+  changeOrigin: true,
+  pathRewrite: { '^/slidev': '' },
+  ws: true,  // Enable WebSocket proxy for HMR
+  on: {
+    proxyReq: (proxyReq, req, res) => {
+      // Log proxy requests for debugging
+      console.log(`🔀 Proxy: ${req.method} ${req.url} -> ${SLIDEV_URL}`);
+    },
+    error: (err, req, res) => {
+      console.error('❌ Proxy error:', err.message);
+    }
+  }
+}));
+
+// ==========================================
 // API ENDPOINTS
 // ==========================================
 
 // Config
 app.get('/api/config', (_req: Request, res: Response) => {
   res.json({ 
-    slidevUrl: SLIDEV_URL,
+    // Always use proxy route - never expose internal localhost URL
+    slidevUrl: '/slidev',
     appName: 'Sli.dev Editor',
     maxHistory: MAX_HISTORY,
     hasDatabase: !!db
@@ -675,26 +698,8 @@ const findExportedPdf = (): string | null => {
   return null;
 };
 
-// Get Chromium executable path (system chromium in container, or detect local)
-const getChromiumPath = (): string => {
-  // Container path (set via ENV in Dockerfile)
-  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-    return process.env.PUPPETEER_EXECUTABLE_PATH;
-  }
-  // Common Linux paths
-  const linuxPaths = ['/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome'];
-  for (const p of linuxPaths) {
-    if (existsSync(p)) return p;
-  }
-  // macOS
-  const macPath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  if (existsSync(macPath)) return macPath;
-  // Default fallback
-  return '/usr/bin/chromium';
-};
-
-// API: Export to PDF using Puppeteer (headless Chrome)
-// This renders the actual Vue.js content exactly as seen in the browser
+// API: Export to PDF using Slidev's official export command
+// This uses playwright-chromium under the hood - Slidev's recommended approach
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
     return res.status(409).json({ error: 'Export already in progress. Please wait.' });
@@ -703,73 +708,39 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   exportInProgress = true;
   const outputPath = path.join(SLIDEV_DIR, 'slides-export.pdf');
   
-  console.log('📄 Starting PDF export with Puppeteer...');
-  console.log(`   Source: ${SLIDEV_URL}/?print`);
+  console.log('📄 Starting PDF export with Slidev CLI...');
+  console.log(`   Working directory: ${SLIDEV_DIR}`);
   console.log(`   Output: ${outputPath}`);
-  console.log(`   Chromium: ${getChromiumPath()}`);
-  
-  let browser = null;
   
   try {
-    // Launch Chromium with container-safe flags
-    browser = await puppeteer.launch({
-      executablePath: getChromiumPath(),
-      headless: true,
-      args: [
-        '--no-sandbox',                    // Required for running as root in containers
-        '--disable-setuid-sandbox',        // Required for containers
-        '--disable-dev-shm-usage',         // Use /tmp instead of /dev/shm
-        '--disable-gpu',                   // Not needed in headless
-        '--disable-software-rasterizer',
-        '--disable-extensions',
-        '--no-first-run',
-        '--no-zygote',                     // Single process mode for containers
-        '--single-process',                // Helps with container stability
-        '--disable-background-networking',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
-        '--metrics-recording-only',
-        '--mute-audio',
-        '--safebrowsing-disable-auto-update',
-      ],
+    // Use Slidev's official export command (uses playwright-chromium)
+    // --timeout: Allow enough time for complex slides
+    // --output: Specify output path
+    const exportCmd = `npx slidev export --output "${outputPath}" --timeout 120000`;
+    
+    console.log('   Running:', exportCmd);
+    
+    const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+      exec(exportCmd, { 
+        cwd: SLIDEV_DIR,          // Run from Slidev directory
+        timeout: 180000,          // 3 minutes total timeout
+        env: {
+          ...process.env,
+          // Playwright container-safe environment variables
+          PLAYWRIGHT_BROWSERS_PATH: '/ms-playwright',
+        }
+      }, (error, stdout, stderr) => {
+        if (error) {
+          reject({ error, stdout, stderr });
+        } else {
+          resolve({ stdout, stderr });
+        }
+      });
     });
     
-    const page = await browser.newPage();
-    
-    // Set viewport to match presentation aspect ratio (16:9)
-    await page.setViewport({ width: 1920, height: 1080 });
-    
-    // Navigate to Slidev's print view
-    const printUrl = `${SLIDEV_URL}/?print`;
-    console.log('   Navigating to:', printUrl);
-    
-    await page.goto(printUrl, { 
-      waitUntil: 'networkidle0',  // Wait for all network requests to finish
-      timeout: 60000              // 60 second timeout
-    });
-    
-    // Wait for slides to fully render
-    console.log('   Waiting for slides to render...');
-    await page.waitForSelector('.slidev-layout', { timeout: 30000 });
-    
-    // Additional wait for any animations/transitions to complete
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate PDF with presentation-optimized settings
-    console.log('   Generating PDF...');
-    await page.pdf({
-      path: outputPath,
-      format: 'A4',
-      landscape: true,                    // Presentations are typically landscape
-      printBackground: true,              // Include background colors/images
-      preferCSSPageSize: true,            // Respect CSS @page rules if present
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-    });
-    
-    await browser.close();
-    browser = null;
+    console.log('📄 Slidev export completed');
+    if (result.stdout) console.log('   stdout:', result.stdout);
+    if (result.stderr) console.log('   stderr:', result.stderr);
     
     // Check if PDF was created
     if (existsSync(outputPath)) {
@@ -783,16 +754,16 @@ app.post('/api/export', async (_req: Request, res: Response) => {
       res.status(500).json({ error: 'PDF file not created. Check server logs.' });
     }
   } catch (err: any) {
-    if (browser) {
-      try { await browser.close(); } catch (e) { /* ignore */ }
-    }
     exportInProgress = false;
-    const errorMsg = err?.message || 'Unknown error';
+    const errorMsg = err?.error?.message || err?.message || 'Unknown error';
+    const stdout = err?.stdout || '';
+    const stderr = err?.stderr || '';
     
     console.error('❌ Export failed:', errorMsg);
-    console.error('   Stack:', err?.stack);
+    if (stdout) console.error('   stdout:', stdout);
+    if (stderr) console.error('   stderr:', stderr);
     
-    res.status(500).json({ error: `Export failed: ${errorMsg}`.slice(0, 300) });
+    res.status(500).json({ error: `Export failed: ${stderr || stdout || errorMsg}`.slice(0, 500) });
   }
 });
 

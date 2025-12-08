@@ -3,13 +3,17 @@
   "private": true,
   "scripts": {
     "dev": "slidev --remote",
-    "build": "slidev build"
+    "build": "slidev build",
+    "export": "slidev export --output slides-export.pdf"
   },
   "dependencies": {
-    "@slidev/cli": "^0.49.0",
+    "@slidev/cli": "^51.0.0",
     "@slidev/theme-default": "^0.25.0",
     "vite": "^5.0.0",
     "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.48.0"
   }
 }
 
