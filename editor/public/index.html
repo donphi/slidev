@@ -1500,19 +1500,23 @@ Questions?
       if (!helpLoaded) {
         try {
           const response = await fetch('/help.md');
+          if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+          }
           const markdown = await response.text();
           
           // Configure marked to generate heading IDs for TOC links
+          // Note: marked v5+ uses object params { text, depth } instead of (text, level)
           marked.use({
             renderer: {
-              heading(text, level) {
-                const slug = text.toLowerCase()
+              heading({ text, depth }) {
+                const slug = String(text).toLowerCase()
                   .replace(/<[^>]*>/g, '') // Strip HTML tags
                   .replace(/[^\w\s-]/g, '') // Remove special chars
                   .replace(/\s+/g, '-') // Spaces to dashes
                   .replace(/-+/g, '-') // Multiple dashes to single
                   .trim();
-                return `<h${level} id="${slug}">${text}</h${level}>`;
+                return `<h${depth} id="${slug}">${text}</h${depth}>`;
               }
             }
           });
