@@ -474,7 +474,7 @@
   <!-- Help Modal -->
   <div id="help-modal" class="fixed inset-0 z-50 hidden">
     <div class="modal-backdrop absolute inset-0" onclick="closeHelpModal()"></div>
-    <div class="absolute top-4 bottom-4 left-1/2 transform -translate-x-1/2 w-full max-w-4xl bg-slate-900 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden">
+    <div class="absolute top-8 bottom-8 left-1/2 transform -translate-x-1/2 w-[calc(100%-4rem)] max-w-5xl bg-slate-900 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700 flex-shrink-0">
         <div class="flex items-center gap-3">
           <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -488,7 +488,7 @@
           </svg>
         </button>
       </div>
-      <div id="help-content" class="flex-1 overflow-y-auto p-6 prose prose-invert prose-slate max-w-none">
+      <div id="help-content" class="flex-1 overflow-y-auto p-8 px-12 prose prose-invert prose-slate max-w-none" style="scroll-behavior: smooth;">
         <div class="text-center py-12">
           <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full spinner mx-auto mb-3"></div>
           <p class="text-slate-500">Loading documentation...</p>
@@ -1452,8 +1452,38 @@ Questions?
         try {
           const response = await fetch('/help.md');
           const markdown = await response.text();
+          
+          // Configure marked to generate heading IDs for TOC links
+          marked.use({
+            renderer: {
+              heading(text, level) {
+                const slug = text.toLowerCase()
+                  .replace(/<[^>]*>/g, '') // Strip HTML tags
+                  .replace(/[^\w\s-]/g, '') // Remove special chars
+                  .replace(/\s+/g, '-') // Spaces to dashes
+                  .replace(/-+/g, '-') // Multiple dashes to single
+                  .trim();
+                return `<h${level} id="${slug}">${text}</h${level}>`;
+              }
+            }
+          });
+          
           const html = marked.parse(markdown);
-          document.getElementById('help-content').innerHTML = html;
+          const helpContent = document.getElementById('help-content');
+          helpContent.innerHTML = html;
+          
+          // Handle anchor links to scroll within the modal
+          helpContent.querySelectorAll('a[href^="#"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              const targetId = link.getAttribute('href').slice(1);
+              const target = document.getElementById(targetId);
+              if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            });
+          });
+          
           helpLoaded = true;
         } catch (err) {
           document.getElementById('help-content').innerHTML = `
