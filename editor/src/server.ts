@@ -239,7 +239,7 @@ app.use('/slidev', createProxyMiddleware({
   },
   on: {
     proxyReq: (proxyReq, req) => {
-      const originalPath = req.originalUrl || req.url || '/';
+      const originalPath = (req as Request).originalUrl || req.url || '/';
       const finalPath = (proxyReq.path || '').startsWith('/')
         ? proxyReq.path
         : `/${proxyReq.path}`;
