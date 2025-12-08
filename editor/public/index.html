@@ -148,8 +148,8 @@
     <!-- Main Content - 3 Panels: MD | Styles | Preview -->
     <main class="flex flex-1 overflow-hidden">
       
-      <!-- Panel 1: Markdown Editor (40%) -->
-      <div id="md-panel" class="flex flex-col bg-slate-950" style="width: 40%;">
+      <!-- Panel 1: Markdown Editor (45%) -->
+      <div id="md-panel" class="flex flex-col bg-slate-950" style="width: 45%;">
         <div class="flex items-center border-b border-slate-800 bg-slate-900/30 px-3 py-2">
           <svg class="w-4 h-4 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -169,8 +169,8 @@
       <!-- Resizer 1 -->
       <div class="w-1 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
 
-      <!-- Panel 2: Styles Editor (30%) -->
-      <div id="styles-panel" class="flex flex-col bg-slate-950" style="width: 30%;">
+      <!-- Panel 2: Styles Editor (35%) -->
+      <div id="styles-panel" class="flex flex-col bg-slate-950" style="width: 35%;">
         <div class="flex items-center border-b border-slate-800 bg-slate-900/30 px-3 py-2">
           <svg class="w-4 h-4 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
@@ -189,30 +189,38 @@
       <!-- Resizer 2 -->
       <div class="w-1 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
 
-      <!-- Panel 3: Preview (30%) -->
-      <div id="preview-panel" class="flex flex-col bg-white" style="width: 30%;">
-        <div class="flex items-center justify-between border-b border-slate-800 bg-slate-900/50 px-3 py-2">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-            <span class="text-sm font-medium text-white">Preview</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <button onclick="refreshPreview()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-smooth" title="Refresh">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-            </button>
-            <button onclick="openPresentation()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-smooth" title="Open in New Tab">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-              </svg>
-            </button>
-          </div>
+      <!-- Panel 3: Presentation Actions (20%) -->
+      <div id="preview-panel" class="flex flex-col bg-slate-900" style="width: 20%;">
+        <div class="flex items-center border-b border-slate-800 bg-slate-900/50 px-3 py-2">
+          <svg class="w-4 h-4 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span class="text-sm font-medium text-white">View</span>
         </div>
-        <iframe id="preview-frame" class="flex-1 w-full h-full border-0" src="about:blank"></iframe>
+        <div class="flex-1 flex flex-col p-4 gap-3">
+          <button onclick="openPresentation()" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-smooth flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Open Slides
+          </button>
+          <button onclick="openPresenterMode()" class="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-smooth flex items-center justify-center gap-2 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            Presenter
+          </button>
+          <button onclick="openOverview()" class="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-smooth flex items-center justify-center gap-2 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/>
+            </svg>
+            Overview
+          </button>
+          <div class="flex-1"></div>
+          <p class="text-xs text-slate-500 text-center">Opens in new tab.<br/>Auto-reloads on save.</p>
+        </div>
       </div>
     </main>
 
@@ -364,10 +372,7 @@
         console.warn('Could not fetch config');
       }
 
-      // Setup preview loading detection and load initial preview
-      setupPreviewLoadDetection();
-      showPreviewLoading('Starting Slidev...');
-      document.getElementById('preview-frame').src = slidevUrl;
+      // No iframe - presentation opens in new tab
 
       // Create markdown editor
       editor = monaco.editor.create(document.getElementById('editor-container'), {
@@ -475,30 +480,6 @@
       }
     }
 
-    // Preview loading functions
-    function showPreviewLoading(message = 'Loading...') {
-      // Could add a loading indicator if needed
-    }
-    
-    function hidePreviewLoading() {
-      // Could hide loading indicator if needed
-    }
-    
-    function setupPreviewLoadDetection() {
-      const frame = document.getElementById('preview-frame');
-      if (frame) {
-        frame.addEventListener('load', hidePreviewLoading);
-      }
-    }
-
-    // Refresh the preview iframe
-    function refreshPreview() {
-      const frame = document.getElementById('preview-frame');
-      if (frame) {
-        frame.src = slidevUrl;
-      }
-    }
-    
     // Open presentation in new tab
     function openPresentation() {
       window.open(slidevUrl, '_blank');
