@@ -1,0 +1,342 @@
+/* ============================================
+   FONT IMPORTS - Load fonts with all weights
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
+
+/* ============================================
+   GLOBAL VARIABLES - EASY CONFIGURATION
+   ============================================ */
+:root {
+  /* ---- FONTS ---- */
+  --slidev-font-family: 'Nunito Sans', sans-serif;
+  --slidev-code-font-family: 'Fira Code', monospace;
+
+  /* ---- FONT SIZES ---- */
+  --slidev-font-size-base: 18px;
+  --slidev-font-size-p: 1.1rem;
+
+  /* ---- COLORS ---- */
+  --slidev-theme-primary: #5d8392;
+  --slidev-theme-secondary: #42b883;
+  --slidev-heading-color: #2c3e50;
+  --slidev-text-color: #333;
+  --slidev-table-border-color: #ddd;
+  --slidev-table-header-bg: #f5f5f5;
+
+  /* ============================================
+     LAYOUT MARGINS (content slides)
+     Adjust these to control slide padding
+     ============================================ */
+  --slide-padding-top: 2rem;      /* Distance from top edge */
+  --slide-padding-right: 4.1rem;    /* Distance from right edge */
+  --slide-padding-bottom: 2rem;   /* Distance from bottom edge */
+  --slide-padding-left: 4.1rem;     /* Distance from left edge */
+
+  /* ============================================
+     MAIN HEADING (H1) - Title on each slide
+     ============================================ */
+  --h1-font-size: 2.5rem;         /* Size of main heading */
+  --h1-color: #696d72;            /* Color of main heading */
+  --h1-margin-top: 0.5rem;             /* Space ABOVE heading */
+  --h1-margin-bottom: 0;      /* Space BELOW heading */
+  --h1-margin-left: 0;            /* Indent from left (0 = flush with content) */
+  --h1-line-height: 1.2;
+  --h1-font-weight: 700;          /* bold = 700, normal = 400 */
+
+  /* ============================================
+     SUBHEADING (H2)
+     ============================================ */
+  --h2-font-size: 1rem;
+  --h2-color: #2d4047;
+  --h2-margin-top: 0.1em;
+  --h2-margin-bottom: 0.2em;
+  --h2-line-height: 1.3;
+  --h2-font-weight: 700;
+
+  /* ============================================
+     SECTION HEADING (H3)
+     ============================================ */
+  --h3-font-size: 1.4rem;
+  --h3-color: #5d8392;           /* Uses primary color */
+  --h3-margin-top: 0.5em;
+  --h3-margin-bottom: 0.5em;
+  --h3-font-weight: 700;
+
+  /* ============================================
+     LINE BREAK / SPACER HEIGHT
+     ============================================ */
+  --br-height: 4px;               /* Height of <br> and .spacer - use px for precision */
+
+  /* ============================================
+     TABLE SETTINGS
+     ============================================ */
+  --table-line-height: 1.1;       /* Line height for table cells (1.2 = tight, 1.5 = loose) */
+  --table-font-size: 0.6em;       /* Default table font size */
+  --table-cell-padding: 0.4rem;   /* Padding inside cells */
+
+  /* ============================================
+     LIST / BULLET SETTINGS
+     ============================================ */
+  --list-item-spacing: 0.5rem;    /* Space between bullet items */
+  --list-line-height: 1.5;        /* Line height within bullet text */
+  --list-font-size: 1em;     /* Font size for list items */
+
+  /* ============================================
+     CONFIDENTIAL LABEL
+     Position: set ONE of top/bottom, ONE of left/right
+     Use 'auto' for the opposite side
+     ============================================ */
+  --confidential-top: 1.6rem;           /* Distance from top (use 'auto' if using bottom) */
+  --confidential-bottom: auto;      /* Distance from bottom */
+  --confidential-left: auto;        /* Distance from left */
+  --confidential-right: 4.2rem;         /* Distance from right (use 'auto' if using left) */
+  --confidential-font-size: 0.5rem;   /* Font size */
+  --confidential-tracking: 0.1em;    /* Letter spacing (tracking) */
+  --confidential-color: #441313;         /* Text color */
+
+  /* ============================================
+     PAGE NUMBER (X of Y)
+     Position: set ONE of top/bottom, ONE of left/right
+     Use 'auto' for the opposite side
+     ============================================ */
+  --page-number-top: auto;            /* Distance from top (use 'auto' if using bottom) */
+  --page-number-bottom: 1.6rem;       /* Distance from bottom */
+  --page-number-left: 4.2rem;           /* Distance from left (use 'auto' if using right) */
+  --page-number-right: auto;        /* Distance from right */
+  --page-number-font-size: 0.4rem;    /* Font size */
+  --page-number-color: #666;          /* Text color */
+}
+
+/* ============================================
+   APPLY LAYOUT STYLES
+   ============================================ */
+.slidev-layout {
+  font-family: var(--slidev-font-family);
+  font-size: var(--slidev-font-size-base);
+  color: var(--slidev-text-color);
+  
+  /* Apply individual padding values */
+  padding-top: var(--slide-padding-top);
+  padding-right: var(--slide-padding-right);
+  padding-bottom: var(--slide-padding-bottom);
+  padding-left: var(--slide-padding-left);
+}
+
+/* 
+  Default background for ALL slides (footer.png)
+  This applies to every slide except intro which has its own background
+*/
+.slidev-layout:not(.intro) {
+  background-image: url('/img/footer.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ============================================
+   HEADING STYLES
+   ============================================ */
+
+/* Main Heading (H1) - The title on each slide */
+.slidev-layout h1 {
+  font-size: var(--h1-font-size);
+  color: var(--h1-color);
+  margin-top: var(--h1-margin-top);
+  margin-bottom: var(--h1-margin-bottom);
+  margin-left: var(--h1-margin-left);
+  line-height: var(--h1-line-height);
+  font-weight: var(--h1-font-weight);
+}
+
+/* Subheading (H2) */
+.slidev-layout h2 {
+  font-size: var(--h2-font-size);
+  color: var(--h2-color);
+  margin-top: var(--h2-margin-top);
+  margin-bottom: var(--h2-margin-bottom);
+  line-height: var(--h2-line-height);
+  font-weight: var(--h2-font-weight);
+}
+
+/* Section Heading (H3) */
+.slidev-layout h3 {
+  font-size: var(--h3-font-size);
+  color: var(--h3-color);
+  margin-top: var(--h3-margin-top);
+  margin-bottom: var(--h3-margin-bottom);
+  font-weight: var(--h3-font-weight);
+}
+
+/* Text */
+.slidev-layout p {
+  font-size: var(--slidev-font-size-p);
+  line-height: 1.6;
+  margin-bottom: 0.8em;
+}
+
+/* Bold text - **text** in markdown */
+.slidev-layout strong,
+.slidev-layout b {
+  font-weight: 700 !important;
+}
+
+/* ============================================
+   LINE BREAK HEIGHT - <br> spacing
+   ============================================ */
+.slidev-layout br {
+  display: block;
+  content: "";
+  line-height: var(--br-height);              /* Controls the height of line break */
+}
+
+/* Alternative: use a spacer class for precise control */
+/* Usage in slides.md: <div class="spacer"></div> */
+.slidev-layout .spacer {
+  height: var(--br-height);
+}
+
+/* ============================================
+   TABLES - Horizontal lines only, light fill
+   ============================================ */
+.slidev-layout table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--table-font-size);         /* Configurable font size */
+  margin: 0.5rem 0;
+  border: none;                              /* No outer border */
+}
+
+.slidev-layout th,
+.slidev-layout td {
+  border: none;                              /* Remove all borders */
+  border-bottom: 1px solid #e0e0e0;          /* Horizontal line only */
+  padding: var(--table-cell-padding);        /* Configurable padding */
+  text-align: left;
+  line-height: var(--table-line-height);     /* Configurable line height */
+}
+
+.slidev-layout th {
+  background-color: transparent;             /* No header background */
+  font-weight: 700 !important;               /* Bold - 700 for strong bold */
+  color: #5d8392;                            /* Light blue - matches h3/subheading */
+  border-bottom: 1px solid #e0e0e0;          /* Same thickness as other lines */
+}
+
+.slidev-layout tr:nth-child(even) {
+  background-color: #f9f9fb;                 /* Very light grey fill */
+}
+
+.slidev-layout tr:last-child td {
+  border-bottom: none;                       /* No line on last row */
+}
+
+/* ============================================
+   CONDENSED TABLES - for large data tables
+   Use with <style scoped> in slides
+   ============================================ */
+
+/* table-xs: Extra small - very tight */
+.table-xs table { font-size: 0.5em !important; }
+.table-xs th, .table-xs td { padding: 0.15rem 0.25rem !important; }
+
+/* table-sm: Small - compact */
+.table-sm table { font-size: 0.55em !important; }
+.table-sm th, .table-sm td { padding: 0.2rem 0.3rem !important; }
+
+/* table-md: Medium - slightly condensed */
+.table-md table { font-size: 0.6em !important; }
+.table-md th, .table-md td { padding: 0.25rem 0.35rem !important; }
+
+/* Direct class on wrapper div */
+.condensed-table table { font-size: 0.5em !important; }
+.condensed-table th, .condensed-table td { padding: 0.15rem 0.25rem !important; }
+
+/* Lists */
+.slidev-layout ul,
+.slidev-layout ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.slidev-layout li {
+  margin-bottom: var(--list-item-spacing);    /* Space between bullets */
+  line-height: var(--list-line-height);       /* Line height within bullet text */
+  font-size: var(--list-font-size);
+}
+/* Custom Chart Container */
+.chart-container {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+/* Utility for layout locations (overrides) */
+.layout-top-left {
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.layout-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+}
+
+/* ============================================
+   SLIDE UTILITY CLASSES
+   Use in frontmatter: class: dense text-sm
+   ============================================ */
+
+/* LINE SPACING - tighter bullets/lines */
+.dense li,
+.slidev-layout.dense li,
+.slidev-page.dense .slidev-layout li {
+  margin-bottom: 0.15rem !important;          /* Very tight */
+}
+.tight li,
+.slidev-layout.tight li,
+.slidev-page.tight .slidev-layout li {
+  margin-bottom: 0.25rem !important;          /* Tight */
+}
+.compact li,
+.slidev-layout.compact li,
+.slidev-page.compact .slidev-layout li {
+  margin-bottom: 0.35rem !important;          /* Slightly tight */
+}
+
+/* FONT SIZE overrides - apply to whole slide */
+.text-xs,
+.text-xs *,
+.slidev-page.text-xs .slidev-layout,
+.slidev-page.text-xs .slidev-layout * {
+  font-size: 0.75rem !important;              /* Extra small */
+}
+.text-sm,
+.text-sm *,
+.slidev-page.text-sm .slidev-layout,
+.slidev-page.text-sm .slidev-layout * {
+  font-size: 0.875rem !important;             /* Small */
+}
+.text-base,
+.text-base *,
+.slidev-page.text-base .slidev-layout,
+.slidev-page.text-base .slidev-layout * {
+  font-size: 1rem !important;                 /* Normal */
+}
+.text-lg,
+.text-lg *,
+.slidev-page.text-lg .slidev-layout,
+.slidev-page.text-lg .slidev-layout * {
+  font-size: 1.125rem !important;             /* Large */
+}
+
