@@ -61,6 +61,30 @@
     .landing-gradient {
       background: radial-gradient(ellipse at top, #1e293b 0%, #0d1117 50%);
     }
+    
+    /* Prose styles for help modal */
+    .prose { color: #cbd5e1; line-height: 1.7; }
+    .prose h1 { color: #f1f5f9; font-size: 2rem; font-weight: 700; margin-top: 0; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #334155; }
+    .prose h2 { color: #f1f5f9; font-size: 1.5rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.25rem; border-bottom: 1px solid #334155; }
+    .prose h3 { color: #e2e8f0; font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    .prose p { margin-bottom: 1rem; }
+    .prose a { color: #60a5fa; text-decoration: underline; }
+    .prose a:hover { color: #93c5fd; }
+    .prose strong { color: #f1f5f9; font-weight: 600; }
+    .prose code { background: #1e293b; color: #fbbf24; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875em; }
+    .prose pre { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem; overflow-x: auto; margin: 1rem 0; }
+    .prose pre code { background: transparent; color: #e2e8f0; padding: 0; }
+    .prose ul, .prose ol { margin: 1rem 0; padding-left: 1.5rem; }
+    .prose li { margin-bottom: 0.5rem; }
+    .prose ul { list-style-type: disc; }
+    .prose ol { list-style-type: decimal; }
+    .prose blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; color: #94a3b8; font-style: italic; background: #1e293b; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; }
+    .prose table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    .prose th { background: #1e293b; color: #60a5fa; font-weight: 600; text-align: left; padding: 0.75rem; border-bottom: 2px solid #334155; }
+    .prose td { padding: 0.75rem; border-bottom: 1px solid #334155; }
+    .prose tr:hover { background: #1e293b; }
+    .prose hr { border: none; border-top: 1px solid #334155; margin: 2rem 0; }
+    .prose img { max-width: 100%; border-radius: 0.5rem; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
@@ -96,14 +120,18 @@
         
         <!-- New Presentation Form (hidden by default) -->
         <div id="new-presentation-form" class="hidden px-6 py-4 bg-slate-800/50 border-b border-slate-700">
-          <div class="flex gap-2">
-            <input id="landing-new-file-name" type="text" placeholder="my-presentation.md" 
-              class="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
-            <select id="landing-new-theme" class="px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
-              <option value="default">Theme: default</option>
-            </select>
-            <button onclick="createNewPresentation()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-smooth">Create</button>
-            <button onclick="hideNewPresentationForm()" class="px-4 py-2 text-slate-400 hover:text-white transition-smooth">Cancel</button>
+          <div class="flex flex-col gap-3">
+            <div class="flex gap-2">
+              <input id="landing-new-file-name" type="text" placeholder="my-presentation.md" 
+                class="flex-1 min-w-0 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+              <select id="landing-new-theme" class="px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500 max-w-[200px]">
+                <option value="default">Theme: default</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button onclick="hideNewPresentationForm()" class="px-4 py-2 text-slate-400 hover:text-white transition-smooth">Cancel</button>
+              <button onclick="createNewPresentation()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-smooth">Create</button>
+            </div>
           </div>
         </div>
         
@@ -120,6 +148,13 @@
       <div class="mt-6 flex justify-center gap-4 text-sm">
         <a href="#" onclick="loadDefaultAndEnter(); return false;" class="text-slate-400 hover:text-white transition-smooth">
           Skip → Load default presentation
+        </a>
+        <span class="text-slate-600">|</span>
+        <a href="#" onclick="openHelpModal(); return false;" class="text-blue-400 hover:text-blue-300 transition-smooth flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Help Guide
         </a>
       </div>
     </div>
@@ -194,6 +229,13 @@
         <button id="btn-download" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-smooth" title="Download Markdown file">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+        </button>
+        
+        <!-- Help Button -->
+        <button id="btn-help" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-blue-400 transition-smooth" title="Help & Documentation">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </button>
       </div>
@@ -429,6 +471,35 @@
     </div>
   </div>
 
+  <!-- Help Modal -->
+  <div id="help-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeHelpModal()"></div>
+    <div class="absolute top-4 bottom-4 left-1/2 transform -translate-x-1/2 w-full max-w-4xl bg-slate-900 rounded-xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h2 class="text-lg font-semibold text-white">Help & Documentation</h2>
+        </div>
+        <button onclick="closeHelpModal()" class="p-1 text-slate-400 hover:text-white rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div id="help-content" class="flex-1 overflow-y-auto p-6 prose prose-invert prose-slate max-w-none">
+        <div class="text-center py-12">
+          <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full spinner mx-auto mb-3"></div>
+          <p class="text-slate-500">Loading documentation...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Markdown Parser for Help -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
   <!-- Monaco Editor Loader -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
@@ -1369,6 +1440,39 @@ Questions?
     // ==========================================
     // EVENT LISTENERS
     // ==========================================
+    // ==========================================
+    // HELP MODAL
+    // ==========================================
+    let helpLoaded = false;
+    
+    async function openHelpModal() {
+      document.getElementById('help-modal').classList.remove('hidden');
+      
+      if (!helpLoaded) {
+        try {
+          const response = await fetch('/help.md');
+          const markdown = await response.text();
+          const html = marked.parse(markdown);
+          document.getElementById('help-content').innerHTML = html;
+          helpLoaded = true;
+        } catch (err) {
+          document.getElementById('help-content').innerHTML = `
+            <div class="text-center py-12">
+              <p class="text-red-400">Failed to load help documentation.</p>
+              <p class="text-slate-500 text-sm mt-2">Please check your connection and try again.</p>
+            </div>
+          `;
+        }
+      }
+    }
+    
+    function closeHelpModal() {
+      document.getElementById('help-modal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // EVENT LISTENERS
+    // ==========================================
     function setupEventListeners() {
       document.getElementById('btn-save').addEventListener('click', saveSlides);
       document.getElementById('btn-export').addEventListener('click', exportPdf);
@@ -1376,6 +1480,7 @@ Questions?
       document.getElementById('btn-themes').addEventListener('click', openThemesModal);
       document.getElementById('btn-history').addEventListener('click', openHistoryModal);
       document.getElementById('btn-files').addEventListener('click', openFilesModal);
+      document.getElementById('btn-help').addEventListener('click', openHelpModal);
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1384,6 +1489,7 @@ Questions?
           closeThemesModal();
           closeSaveThemeModal();
           closeThemeConfirmModal();
+          closeHelpModal();
         }
       });
 

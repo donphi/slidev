@@ -18,6 +18,9 @@ const SLIDEV_URL = process.env.SLIDEV_URL || 'http://localhost:3030';
 const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
 const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10);
 const DATABASE_URL = process.env.DATABASE_URL || '';
+// SEED_FROM_FILES: If 'true', will copy local slides.md/style.css to database when DB is empty
+// Set to 'false' in production to prevent local files from overriding database
+const SEED_FROM_FILES = process.env.SEED_FROM_FILES !== 'false';
 
 // Database connection (optional - falls back to file system if not configured)
 let db: Pool | null = null;
@@ -106,16 +109,41 @@ const restoreFromDb = async () => {
     if (slidesResult.rows.length > 0) {
       writeFileSync(SLIDES_PATH, slidesResult.rows[0].content, 'utf-8');
       console.log('📥 Restored slides.md from database');
-    } else {
-      // No data in DB yet - save current file as initial content
+    } else if (SEED_FROM_FILES) {
+      // No data in DB yet - optionally seed from local file
       if (existsSync(SLIDES_PATH)) {
-      const content = readFileSync(SLIDES_PATH, 'utf-8');
-      await db.query(
-        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
-        ['slides.md', content]
-      );
-        console.log('📤 Saved initial slides.md to database');
+        const content = readFileSync(SLIDES_PATH, 'utf-8');
+        await db.query(
+          'INSERT INTO presentations (name, content, theme_name) VALUES ($1, $2, $3)',
+          ['slides.md', content, 'default']
+        );
+        console.log('📤 Seeded slides.md from local file to database');
       }
+    } else {
+      // Create empty default presentation if nothing exists
+      const defaultContent = `---
+theme: default
+layout: intro
+---
+
+# Welcome to Sli.dev Editor
+
+Create your first presentation!
+
+---
+
+# Getting Started
+
+- Edit this markdown content
+- Use the CSS editor for styling
+- Click "Open Slides" to preview
+`;
+      await db.query(
+        'INSERT INTO presentations (name, content, theme_name) VALUES ($1, $2, $3)',
+        ['slides.md', defaultContent, 'default']
+      );
+      writeFileSync(SLIDES_PATH, defaultContent, 'utf-8');
+      console.log('📝 Created default empty presentation');
     }
     
     // Restore style.css from database (stored as theme named 'default')
@@ -128,16 +156,18 @@ const restoreFromDb = async () => {
     if (themeResult.rows.length > 0) {
       writeFileSync(STYLE_PATH, themeResult.rows[0].content, 'utf-8');
       console.log('📥 Restored style.css from database');
-    } else {
-      // No theme in DB yet - save current file as initial theme
+    } else if (SEED_FROM_FILES) {
+      // No theme in DB yet - optionally seed from local file
       if (existsSync(STYLE_PATH)) {
         const content = readFileSync(STYLE_PATH, 'utf-8');
         await db.query(
           'INSERT INTO themes (name, content) VALUES ($1, $2)',
           ['default', content]
         );
-        console.log('📤 Saved initial style.css to database');
+        console.log('📤 Seeded style.css from local file to database');
       }
+    } else {
+      console.log('⚠️  No default theme in database and SEED_FROM_FILES=false');
     }
   } catch (err) {
     console.error('Database restore error:', err);
@@ -581,11 +611,22 @@ const getDefaultTheme = (): string => {
 // API: List all themes
 app.get('/api/themes', async (_req: Request, res: Response) => {
   try {
-    const themes = [{ name: 'default', isDefault: true, updatedAt: null }];
+    const themes: Array<{name: string, isDefault: boolean, updatedAt: any}> = [];
     
     if (db) {
       const result = await db.query('SELECT name, updated_at FROM themes ORDER BY name');
-      themes.push(...result.rows.map(r => ({ name: r.name, isDefault: false, updatedAt: r.updated_at })));
+      result.rows.forEach(r => {
+        themes.push({ 
+          name: r.name, 
+          isDefault: r.name === 'default',  // Mark 'default' theme as built-in
+          updatedAt: r.updated_at 
+        });
+      });
+    }
+    
+    // If no 'default' theme exists in DB, add a virtual one (from file system)
+    if (!themes.find(t => t.name === 'default')) {
+      themes.unshift({ name: 'default', isDefault: true, updatedAt: null });
     }
     
     res.json({ themes });
@@ -905,6 +946,7 @@ const start = async () => {
 ║  Storage:   ${db ? '🗄️  PostgreSQL' : '📁 File System'}
 ║  History:   ${MAX_HISTORY} backups
 ║  Auth:      ${EDITOR_PASSWORD ? '🔒 Password protected' : '🔓 Open'}
+║  Seed:      ${SEED_FROM_FILES ? '📂 From local files' : '🚫 DB only'}
 ╚═══════════════════════════════════════════════════╝
   `);
 };
