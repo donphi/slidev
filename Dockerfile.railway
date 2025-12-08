@@ -1,5 +1,6 @@
 # Combined Dockerfile for Railway deployment
 # Runs both Sli.dev and Editor in a single container
+# PERSISTENCE: Database only - no file volumes needed
 
 FROM node:20
 
@@ -13,7 +14,6 @@ RUN npm install -g concurrently
 
 # ==========================================
 # PRESENTATION (Sli.dev)
-# Built with all dependencies - runs from here
 # ==========================================
 WORKDIR /app/presentation
 
@@ -24,14 +24,11 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 COPY presentation/package.json ./
 RUN npm install
 
-# Install Playwright browser and system dependencies for Slidev PDF export
-# Slidev officially uses playwright-chromium for export
-# install-deps: installs system libraries (libatk, libnss, etc.)
-# install chromium: downloads the browser
+# Install Playwright browser for PDF export
 RUN npx playwright install-deps chromium && \
     npx playwright install chromium
 
-# Copy presentation files
+# Copy presentation files (defaults)
 COPY presentation/ ./
 
 # ==========================================
@@ -39,41 +36,20 @@ COPY presentation/ ./
 # ==========================================
 WORKDIR /app/editor
 
-# Copy and install editor dependencies
 COPY editor/package.json ./
 RUN npm install
 
-# Copy editor source and build
 COPY editor/tsconfig.json ./
 COPY editor/src ./src
 RUN npm run build
 
-# Copy frontend files
 COPY editor/public ./dist/public
 
 # ==========================================
-# BACKUP DEFAULT FILES
-# These are safe copies that won't be affected by volume mounts
-# ==========================================
-RUN mkdir -p /app/presentation-backup && \
-    cp /app/presentation/slides.md /app/presentation-backup/slides.md && \
-    cp /app/presentation/style.css /app/presentation-backup/style.css
-
-# ==========================================
-# USER DATA DIRECTORY
-# This is where Railway volume should mount
-# Only contains user-editable files (small!)
-# ==========================================
-RUN mkdir -p /app/userdata
-
-# ==========================================
-# STARTUP
+# STARTUP - Simple, no symlinks, no userdata
 # ==========================================
 WORKDIR /app
 
-# Create startup script
-# Key insight: Run Sli.dev from /app/presentation (with node_modules)
-# But symlink slides.md and style.css from /app/userdata (Railway volume)
 RUN echo '#!/bin/bash\n\
 set -e\n\
 export PORT=${PORT:-3000}\n\
@@ -81,86 +57,33 @@ export PORT=${PORT:-3000}\n\
 echo "========================================"\n\
 echo "Sli.dev Editor - Railway Deployment"\n\
 echo "========================================"\n\
-\n\
-# Clean up any broken symlinks in userdata (from previous failed runs)\n\
-echo "Checking user data directory..."\n\
-if [ -L /app/userdata/slides.md ] && [ ! -e /app/userdata/slides.md ]; then\n\
-  echo "Removing broken symlink: slides.md"\n\
-  rm -f /app/userdata/slides.md\n\
-fi\n\
-if [ -L /app/userdata/style.css ] && [ ! -e /app/userdata/style.css ]; then\n\
-  echo "Removing broken symlink: style.css"\n\
-  rm -f /app/userdata/style.css\n\
-fi\n\
-\n\
-# Also clean up if they are symlinks pointing to themselves (circular)\n\
-if [ -L /app/userdata/slides.md ]; then\n\
-  echo "Removing symlink in userdata (should be regular file): slides.md"\n\
-  rm -f /app/userdata/slides.md\n\
-fi\n\
-if [ -L /app/userdata/style.css ]; then\n\
-  echo "Removing symlink in userdata (should be regular file): style.css"\n\
-  rm -f /app/userdata/style.css\n\
-fi\n\
-\n\
-# Ensure userdata has the actual files (not symlinks)\n\
-if [ ! -f /app/userdata/slides.md ]; then\n\
-  echo "Creating default slides.md..."\n\
-  cp /app/presentation-backup/slides.md /app/userdata/slides.md\n\
-fi\n\
-if [ ! -f /app/userdata/style.css ]; then\n\
-  echo "Creating default style.css..."\n\
-  cp /app/presentation-backup/style.css /app/userdata/style.css\n\
-fi\n\
-\n\
-# Create symlinks from presentation dir to userdata\n\
-echo "Linking presentation to user data..."\n\
-rm -f /app/presentation/slides.md 2>/dev/null || true\n\
-rm -f /app/presentation/style.css 2>/dev/null || true\n\
-ln -sf /app/userdata/slides.md /app/presentation/slides.md\n\
-ln -sf /app/userdata/style.css /app/presentation/style.css\n\
-\n\
-echo ""\n\
-echo "User data contents:"\n\
-ls -la /app/userdata/\n\
-echo ""\n\
-echo "Presentation symlinks:"\n\
-ls -la /app/presentation/slides.md /app/presentation/style.css\n\
-\n\
-echo "========================================"\n\
-echo "Starting services..."\n\
+echo "Persistence: Database only (no volumes)"\n\
 echo "Editor: port $PORT"\n\
 echo "Sli.dev: port 3030 (internal)"\n\
 echo "========================================"\n\
 \n\
-# Start both services with concurrently so we can see all output\n\
-# This shows Slidev startup/errors in the logs\n\
+# Start both services\n\
+# --kill-others-on-fail=false: Keep editor running even if slidev crashes\n\
 exec concurrently \\\n\
   --names "slidev,editor" \\\n\
   --prefix "[{name}]" \\\n\
   --prefix-colors "cyan,yellow" \\\n\
+  --kill-others-on-fail=false \\\n\
   "cd /app/presentation && SLIDEV_BASE=/slidev/ npm run dev" \\\n\
-  "sleep 8 && cd /app/editor && npm start"\n\
+  "sleep 5 && cd /app/editor && npm start"\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
-# Default environment variables
-# SLIDES_PATH/STYLE_PATH = where user files are (on volume)
-# SLIDEV_DIR = where Sli.dev is installed (has package.json, node_modules)
-ENV SLIDES_PATH=/app/userdata/slides.md
-ENV STYLE_PATH=/app/userdata/style.css
+# Environment variables
+# Files are directly in /app/presentation - no separate userdata
+ENV SLIDES_PATH=/app/presentation/slides.md
+ENV STYLE_PATH=/app/presentation/style.css
 ENV SLIDEV_DIR=/app/presentation
 ENV SLIDEV_URL=http://localhost:3030
 ENV NODE_NO_WARNINGS=1
-
-# File watching configuration for Vite/Chokidar
-# On Linux (Railway, most cloud providers): native inotify works, no polling needed
-# On Docker Desktop (Windows/macOS): set CHOKIDAR_USEPOLLING=true for file watching
-# By default, we DON'T use polling since Railway runs on Linux
 ENV CHOKIDAR_USEPOLLING=false
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-# Start both services
 CMD ["/app/start.sh"]

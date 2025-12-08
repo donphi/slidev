@@ -76,8 +76,8 @@ const initDatabase = async () => {
 
     console.log('🗄️  Database connected and initialized');
     
-    // Migrate existing file to database if it exists
-    await migrateFileToDb();
+    // Restore from database to files (database is source of truth)
+    await restoreFromDb();
   } catch (err) {
     console.error('Database connection failed:', err);
     console.log('📁 Falling back to file system storage');
@@ -85,25 +85,56 @@ const initDatabase = async () => {
   }
 };
 
-// Migrate existing slides.md to database
-const migrateFileToDb = async () => {
+// Restore content from database to files on startup
+// DATABASE is the source of truth - files in container are ephemeral
+const restoreFromDb = async () => {
   if (!db) return;
   
   try {
-    // Check if default presentation exists in DB
-    const result = await db.query('SELECT id FROM presentations WHERE name = $1', ['slides.md']);
+    // Restore slides.md from database
+    const slidesResult = await db.query(
+      'SELECT content FROM presentations WHERE name = $1',
+      ['slides.md']
+    );
     
-    if (result.rows.length === 0 && existsSync(SLIDES_PATH)) {
-      // Migrate file to database
-      const content = readFileSync(SLIDES_PATH, 'utf-8');
-      await db.query(
-        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
-        ['slides.md', content]
-      );
-      console.log('📥 Migrated slides.md to database');
+    if (slidesResult.rows.length > 0) {
+      writeFileSync(SLIDES_PATH, slidesResult.rows[0].content, 'utf-8');
+      console.log('📥 Restored slides.md from database');
+    } else {
+      // No data in DB yet - save current file as initial content
+      if (existsSync(SLIDES_PATH)) {
+        const content = readFileSync(SLIDES_PATH, 'utf-8');
+        await db.query(
+          'INSERT INTO presentations (name, content) VALUES ($1, $2)',
+          ['slides.md', content]
+        );
+        console.log('📤 Saved initial slides.md to database');
+      }
+    }
+    
+    // Restore style.css from database (stored as theme named 'default')
+    const STYLE_PATH = process.env.STYLE_PATH || '/app/presentation/style.css';
+    const themeResult = await db.query(
+      'SELECT content FROM themes WHERE name = $1',
+      ['default']
+    );
+    
+    if (themeResult.rows.length > 0) {
+      writeFileSync(STYLE_PATH, themeResult.rows[0].content, 'utf-8');
+      console.log('📥 Restored style.css from database');
+    } else {
+      // No theme in DB yet - save current file as initial theme
+      if (existsSync(STYLE_PATH)) {
+        const content = readFileSync(STYLE_PATH, 'utf-8');
+        await db.query(
+          'INSERT INTO themes (name, content) VALUES ($1, $2)',
+          ['default', content]
+        );
+        console.log('📤 Saved initial style.css to database');
+      }
     }
   } catch (err) {
-    console.error('Migration error:', err);
+    console.error('Database restore error:', err);
   }
 };
 
@@ -703,12 +734,17 @@ app.post('/api/themes/apply', async (req: Request, res: Response) => {
     // Slidev will restart after style change - set flag to suppress proxy errors
     slidevRestarting = true;
     
-    // Update presentation's theme reference in DB
+    // Update database: store current style as 'default' theme (for persistence across deploys)
     if (db) {
       await db.query(
         'UPDATE presentations SET theme_name = $1 WHERE name = $2',
         [themeName, presentationName]
       );
+      // Also save the applied CSS as 'default' theme so it persists across deploys
+      await db.query(`
+        INSERT INTO themes (name, content) VALUES ('default', $1)
+        ON CONFLICT (name) DO UPDATE SET content = $1, updated_at = CURRENT_TIMESTAMP
+      `, [cssContent]);
     }
     
     res.json({ success: true, message: `Theme "${themeName}" applied` });
