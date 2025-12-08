@@ -73,6 +73,19 @@
           </button>
         </div>
 
+        <!-- Theme Selector -->
+        <div id="theme-selector" class="relative">
+          <button id="btn-themes" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Themes">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+            </svg>
+            <span id="current-theme-name" class="hidden sm:inline">default</span>
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
         <!-- History Button -->
         <button id="btn-history" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Version History">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,19 +125,44 @@
       
       <!-- Editor Panel -->
       <div id="editor-panel" class="flex flex-col bg-slate-950" style="width: 45%;">
-        <div class="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Tabs -->
+        <div class="flex items-center border-b border-slate-800 bg-slate-900/30">
+          <button id="tab-markdown" onclick="switchTab('markdown')" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-slate-950 border-b-2 border-blue-500 transition-smooth">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
-            <span id="file-label" class="text-sm text-slate-400">slides.md</span>
-          </div>
-          <div id="status" class="flex items-center gap-2 text-xs">
+            <span id="file-label">slides.md</span>
+          </button>
+          <button id="tab-styles" onclick="switchTab('styles')" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-smooth">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+            </svg>
+            <span>Styles</span>
+          </button>
+          <div class="flex-1"></div>
+          <div id="status" class="flex items-center gap-2 text-xs px-4">
             <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
             <span class="text-slate-400">Ready</span>
           </div>
         </div>
-        <div id="editor-container" class="flex-1"></div>
+        
+        <!-- Markdown Editor -->
+        <div id="markdown-editor-wrapper" class="flex-1 relative">
+          <div id="editor-container" class="absolute inset-0"></div>
+        </div>
+        
+        <!-- Styles Editor (hidden by default) -->
+        <div id="styles-editor-wrapper" class="flex-1 relative hidden" style="display: none;">
+          <div id="styles-toolbar" class="flex items-center gap-2 px-3 py-2 bg-slate-900/50 border-b border-slate-800">
+            <span class="text-xs text-slate-500">Editing theme:</span>
+            <span id="editing-theme-name" class="text-xs text-amber-400 font-medium">default (read-only)</span>
+            <div class="flex-1"></div>
+            <button onclick="saveAsTheme()" class="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-smooth">
+              Save As New Theme
+            </button>
+          </div>
+          <div id="styles-container" class="absolute inset-0 top-10"></div>
+        </div>
       </div>
 
       <!-- Resizer -->
@@ -153,7 +191,7 @@
     <!-- Footer -->
     <footer class="flex items-center justify-between px-4 py-1.5 bg-slate-900 border-t border-slate-800 text-xs text-slate-500">
       <div class="flex items-center gap-4">
-        <span>Markdown</span>
+        <span id="file-type">Markdown</span>
         <span id="cursor-position">Ln 1, Col 1</span>
       </div>
       <div class="flex items-center gap-4">
@@ -211,16 +249,67 @@
     </div>
   </div>
 
+  <!-- Themes Modal -->
+  <div id="themes-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeThemesModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Themes</h2>
+        <button onclick="closeThemesModal()" class="p-1 text-slate-400 hover:text-white rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-400 mb-4">Select a theme to apply, or switch to Styles tab to create custom themes.</p>
+        <div id="themes-list" class="space-y-2 max-h-64 overflow-y-auto">
+          <p class="text-slate-500 text-center py-4">Loading...</p>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
+        <p class="text-xs text-slate-500">💡 Tip: Edit the default theme in Styles tab and save as a new theme</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Theme Modal -->
+  <div id="save-theme-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeSaveThemeModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Save Theme As</h2>
+        <button onclick="closeSaveThemeModal()" class="p-1 text-slate-400 hover:text-white rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-400 mb-4">Enter a name for your custom theme. Cannot use "default".</p>
+        <input id="new-theme-name" type="text" placeholder="my-custom-theme" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 mb-4">
+        <div class="flex justify-end gap-2">
+          <button onclick="closeSaveThemeModal()" class="px-4 py-2 text-slate-400 hover:text-white transition-smooth">Cancel</button>
+          <button onclick="confirmSaveTheme()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-smooth">Save Theme</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Monaco Editor Loader -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
     // Global state
     let editor;
+    let stylesEditor;
     let slidevUrl = 'http://localhost:3030';
     let isDirty = false;
+    let stylesIsDirty = false;
     let maxHistory = 10;
     let hasDatabase = false;
     let currentFileName = 'slides.md';
+    let currentThemeName = 'default';
+    let currentTab = 'markdown';
 
     // Initialize
     require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
@@ -249,7 +338,7 @@
 
       document.getElementById('preview-frame').src = slidevUrl;
 
-      // Create editor
+      // Create markdown editor
       editor = monaco.editor.create(document.getElementById('editor-container'), {
         value: '# Loading...',
         language: 'markdown',
@@ -264,7 +353,18 @@
         scrollBeyondLastLine: false
       });
 
+      // Styles editor will be created when needed (on first tab switch)
+
       await loadSlides();
+      // Load current theme name for UI (but don't load content until styles tab is opened)
+      try {
+        const res = await fetch(`/api/themes/current?presentation=${encodeURIComponent(currentFileName)}`);
+        const data = await res.json();
+        currentThemeName = data.themeName || 'default';
+        updateThemeUI();
+      } catch (e) {
+        // Ignore
+      }
 
       editor.onDidChangeCursorPosition((e) => {
         document.getElementById('cursor-position').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
@@ -552,10 +652,287 @@
       }
     }
 
+    // ==========================================
+    // THEMES
+    // ==========================================
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const mdTab = document.getElementById('tab-markdown');
+      const stylesTab = document.getElementById('tab-styles');
+      const mdWrapper = document.getElementById('markdown-editor-wrapper');
+      const stylesWrapper = document.getElementById('styles-editor-wrapper');
+      const fileType = document.getElementById('file-type');
+      
+      if (tab === 'markdown') {
+        mdTab.className = 'flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-slate-950 border-b-2 border-blue-500 transition-smooth';
+        stylesTab.className = 'flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-smooth';
+        mdWrapper.style.display = 'flex';
+        mdWrapper.style.flexDirection = 'column';
+        mdWrapper.style.flex = '1';
+        stylesWrapper.style.display = 'none';
+        fileType.textContent = 'Markdown';
+        setTimeout(() => editor.layout(), 10);
+      } else {
+        // Create styles editor on first use
+        if (!stylesEditor) {
+          stylesEditor = monaco.editor.create(document.getElementById('styles-container'), {
+            value: '/* Loading styles... */',
+            language: 'css',
+            theme: 'vs-dark',
+            fontSize: 14,
+            fontFamily: "'Fira Code', monospace",
+            fontLigatures: true,
+            minimap: { enabled: true },
+            wordWrap: 'on',
+            automaticLayout: true,
+            padding: { top: 16 },
+            scrollBeyondLastLine: false
+          });
+          
+          stylesEditor.onDidChangeModelContent(() => {
+            stylesIsDirty = true;
+            updateStatus('Styles modified', 'warning');
+          });
+          
+          stylesEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => saveAsTheme());
+          
+          // Load the current theme into the editor
+          loadCurrentTheme();
+        }
+        
+        stylesTab.className = 'flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-slate-950 border-b-2 border-blue-500 transition-smooth';
+        mdTab.className = 'flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-smooth';
+        stylesWrapper.style.display = 'flex';
+        stylesWrapper.style.flexDirection = 'column';
+        stylesWrapper.style.flex = '1';
+        mdWrapper.style.display = 'none';
+        fileType.textContent = 'CSS';
+        setTimeout(() => stylesEditor.layout(), 10);
+      }
+    }
+
+    async function loadCurrentTheme() {
+      try {
+        // First get which theme is applied
+        const currentRes = await fetch(`/api/themes/current?presentation=${encodeURIComponent(currentFileName)}`);
+        const currentData = await currentRes.json();
+        currentThemeName = currentData.themeName || 'default';
+        
+        // Then load that theme's content
+        const themeRes = await fetch(`/api/themes/${encodeURIComponent(currentThemeName)}`);
+        const themeData = await themeRes.json();
+        
+        if (themeRes.ok && themeData.content) {
+          if (stylesEditor) {
+            stylesEditor.setValue(themeData.content);
+          }
+          stylesIsDirty = false;
+          updateThemeUI();
+        }
+      } catch (err) {
+        console.error('Failed to load theme:', err);
+      }
+    }
+
+    function updateThemeUI() {
+      document.getElementById('current-theme-name').textContent = currentThemeName;
+      const editingLabel = document.getElementById('editing-theme-name');
+      if (currentThemeName === 'default') {
+        editingLabel.textContent = 'default (read-only)';
+        editingLabel.className = 'text-xs text-amber-400 font-medium';
+      } else {
+        editingLabel.textContent = currentThemeName;
+        editingLabel.className = 'text-xs text-emerald-400 font-medium';
+      }
+    }
+
+    async function loadTheme(name) {
+      try {
+        const res = await fetch(`/api/themes/${encodeURIComponent(name)}`);
+        const data = await res.json();
+        
+        if (res.ok && data.content) {
+          currentThemeName = name;
+          if (stylesEditor) {
+            stylesEditor.setValue(data.content);
+          }
+          stylesIsDirty = false;
+          updateThemeUI();
+        }
+      } catch (err) {
+        console.error('Failed to load theme:', err);
+      }
+    }
+
+    async function openThemesModal() {
+      document.getElementById('themes-modal').classList.remove('hidden');
+      await loadThemesList();
+    }
+
+    function closeThemesModal() {
+      document.getElementById('themes-modal').classList.add('hidden');
+    }
+
+    async function loadThemesList() {
+      const listEl = document.getElementById('themes-list');
+      listEl.innerHTML = '<p class="text-slate-500 text-center py-4">Loading...</p>';
+      
+      try {
+        const res = await fetch('/api/themes');
+        const data = await res.json();
+        
+        listEl.innerHTML = data.themes.map(t => `
+          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg group ${t.name === currentThemeName ? 'ring-2 ring-blue-500' : ''}">
+            <div class="flex-1">
+              <span class="text-white">${t.name}</span>
+              ${t.isDefault ? '<span class="ml-2 text-xs text-amber-400">(built-in)</span>' : ''}
+              ${t.name === currentThemeName ? '<span class="ml-2 text-xs text-blue-400">(active)</span>' : ''}
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editTheme('${t.name}')" class="px-3 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded">Edit</button>
+              <button onclick="applyTheme('${t.name}')" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded ${t.name === currentThemeName ? 'opacity-50 cursor-not-allowed' : ''}">Apply</button>
+              ${!t.isDefault ? `
+                <button onclick="deleteTheme('${t.name}')" class="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        listEl.innerHTML = '<p class="text-red-400 text-center py-4">Failed to load themes</p>';
+      }
+    }
+
+    async function editTheme(name) {
+      if (stylesEditor && stylesIsDirty && !confirm('Unsaved style changes will be lost. Continue?')) return;
+      closeThemesModal();
+      switchTab('styles'); // This will create the editor if needed
+      await loadTheme(name);
+    }
+
+    async function applyTheme(name) {
+      try {
+        updateStatus('Applying theme...', 'loading');
+        const res = await fetch('/api/themes/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ themeName: name, presentationName: currentFileName })
+        });
+        
+        if (res.ok) {
+          currentThemeName = name;
+          await loadTheme(name);
+          updateStatus('Theme applied ✓', 'success');
+          closeThemesModal();
+          setTimeout(refreshPreview, 500);
+        } else {
+          const data = await res.json();
+          updateStatus('Apply failed', 'error');
+          alert(data.error || 'Failed to apply theme');
+        }
+      } catch (err) {
+        updateStatus('Apply error', 'error');
+        console.error('Apply theme error:', err);
+      }
+    }
+
+    async function deleteTheme(name) {
+      if (!confirm(`Delete theme "${name}"? This cannot be undone.`)) return;
+      
+      try {
+        const res = await fetch(`/api/themes/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        if (res.ok) {
+          if (currentThemeName === name) {
+            await applyTheme('default');
+          }
+          await loadThemesList();
+        }
+      } catch (err) {
+        alert('Error deleting theme');
+      }
+    }
+
+    function saveAsTheme() {
+      document.getElementById('save-theme-modal').classList.remove('hidden');
+      const input = document.getElementById('new-theme-name');
+      // Suggest a name based on current theme
+      if (currentThemeName === 'default') {
+        input.value = 'my-theme';
+      } else {
+        input.value = currentThemeName;
+      }
+      input.select();
+    }
+
+    function closeSaveThemeModal() {
+      document.getElementById('save-theme-modal').classList.add('hidden');
+    }
+
+    async function confirmSaveTheme() {
+      const input = document.getElementById('new-theme-name');
+      const name = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      
+      if (!name) {
+        alert('Please enter a theme name');
+        return;
+      }
+      
+      if (name === 'default') {
+        alert('Cannot use "default" as theme name');
+        return;
+      }
+      
+      if (!hasDatabase) {
+        alert('Database required to save custom themes');
+        return;
+      }
+      
+      if (!stylesEditor) {
+        alert('Please open the Styles tab first');
+        return;
+      }
+      
+      try {
+        updateStatus('Saving theme...', 'loading');
+        const content = stylesEditor.getValue();
+        
+        const res = await fetch('/api/themes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, content })
+        });
+        
+        if (res.ok) {
+          currentThemeName = name;
+          stylesIsDirty = false;
+          updateThemeUI();
+          closeSaveThemeModal();
+          updateStatus('Theme saved ✓', 'success');
+          
+          // Ask if they want to apply the new theme
+          if (confirm(`Theme "${name}" saved! Apply it now?`)) {
+            await applyTheme(name);
+          }
+        } else {
+          const data = await res.json();
+          updateStatus('Save failed', 'error');
+          alert(data.error || 'Failed to save theme');
+        }
+      } catch (err) {
+        updateStatus('Save error', 'error');
+        console.error('Save theme error:', err);
+      }
+    }
+
     // Event listeners
     document.getElementById('btn-save').addEventListener('click', saveSlides);
     document.getElementById('btn-export').addEventListener('click', exportPdf);
     document.getElementById('btn-download').addEventListener('click', downloadMd);
+    document.getElementById('btn-themes').addEventListener('click', openThemesModal);
     document.getElementById('btn-refresh').addEventListener('click', refreshPreview);
     document.getElementById('btn-history').addEventListener('click', openHistoryModal);
     document.getElementById('btn-files')?.addEventListener('click', openFilesModal);

@@ -8,6 +8,7 @@ import { exec } from 'child_process';
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SLIDES_PATH = process.env.SLIDES_PATH || '/app/presentation/slides.md';
+const PRESENTATION_DIR = path.dirname(SLIDES_PATH);
 const SLIDEV_URL = process.env.SLIDEV_URL || 'http://localhost:3030';
 const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
 const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10);
@@ -34,6 +35,7 @@ const initDatabase = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) UNIQUE NOT NULL,
         content TEXT NOT NULL,
+        theme_name VARCHAR(255) DEFAULT 'default',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -45,8 +47,26 @@ const initDatabase = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       
+      CREATE TABLE IF NOT EXISTS themes (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
       CREATE INDEX IF NOT EXISTS idx_history_name ON history(presentation_name);
       CREATE INDEX IF NOT EXISTS idx_history_created ON history(created_at DESC);
+    `);
+    
+    // Add theme_name column to presentations if it doesn't exist (migration)
+    await db.query(`
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='presentations' AND column_name='theme_name') THEN
+          ALTER TABLE presentations ADD COLUMN theme_name VARCHAR(255) DEFAULT 'default';
+        END IF;
+      END $$;
     `);
 
     console.log('🗄️  Database connected and initialized');
@@ -436,9 +456,173 @@ app.post('/api/history/restore/:id', async (req: Request, res: Response) => {
 });
 
 // ==========================================
+// THEMES
+// ==========================================
+const STYLE_PATH = path.join(PRESENTATION_DIR, 'style.css');
+
+// Get default theme content from file
+const getDefaultTheme = () => {
+  if (existsSync(STYLE_PATH)) {
+    return readFileSync(STYLE_PATH, 'utf-8');
+  }
+  return '/* Default theme */';
+};
+
+// API: List all themes
+app.get('/api/themes', async (_req: Request, res: Response) => {
+  try {
+    const themes = [{ name: 'default', isDefault: true, updatedAt: null }];
+    
+    if (db) {
+      const result = await db.query('SELECT name, updated_at FROM themes ORDER BY name');
+      themes.push(...result.rows.map(r => ({ name: r.name, isDefault: false, updatedAt: r.updated_at })));
+    }
+    
+    res.json({ themes });
+  } catch (err) {
+    console.error('List themes error:', err);
+    res.status(500).json({ error: 'Failed to list themes' });
+  }
+});
+
+// API: Get theme content
+app.get('/api/themes/:name', async (req: Request, res: Response) => {
+  const { name } = req.params;
+  
+  try {
+    if (name === 'default') {
+      return res.json({ name: 'default', content: getDefaultTheme(), isDefault: true });
+    }
+    
+    if (!db) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+    
+    const result = await db.query('SELECT content FROM themes WHERE name = $1', [name]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Theme not found' });
+    }
+    
+    res.json({ name, content: result.rows[0].content, isDefault: false });
+  } catch (err) {
+    console.error('Get theme error:', err);
+    res.status(500).json({ error: 'Failed to get theme' });
+  }
+});
+
+// API: Create/Update theme (Save As)
+app.post('/api/themes', async (req: Request, res: Response) => {
+  const { name, content } = req.body;
+  
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Theme name is required' });
+  }
+  
+  if (name === 'default') {
+    return res.status(400).json({ error: 'Cannot overwrite default theme. Use a different name.' });
+  }
+  
+  if (typeof content !== 'string') {
+    return res.status(400).json({ error: 'Content must be a string' });
+  }
+  
+  if (!db) {
+    return res.status(400).json({ error: 'Database required for custom themes' });
+  }
+  
+  try {
+    await db.query(`
+      INSERT INTO themes (name, content) VALUES ($1, $2)
+      ON CONFLICT (name) DO UPDATE SET content = $2, updated_at = CURRENT_TIMESTAMP
+    `, [name, content]);
+    
+    res.json({ success: true, name });
+  } catch (err) {
+    console.error('Save theme error:', err);
+    res.status(500).json({ error: 'Failed to save theme' });
+  }
+});
+
+// API: Delete theme
+app.delete('/api/themes/:name', async (req: Request, res: Response) => {
+  const { name } = req.params;
+  
+  if (name === 'default') {
+    return res.status(400).json({ error: 'Cannot delete default theme' });
+  }
+  
+  if (!db) {
+    return res.status(400).json({ error: 'Database required' });
+  }
+  
+  try {
+    await db.query('DELETE FROM themes WHERE name = $1', [name]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete theme error:', err);
+    res.status(500).json({ error: 'Failed to delete theme' });
+  }
+});
+
+// API: Apply theme to presentation (writes to style.css)
+app.post('/api/themes/apply', async (req: Request, res: Response) => {
+  const { themeName, presentationName = 'slides.md' } = req.body;
+  
+  try {
+    let cssContent: string;
+    
+    if (themeName === 'default') {
+      // Read original default theme from file (or use current)
+      cssContent = getDefaultTheme();
+    } else if (db) {
+      const result = await db.query('SELECT content FROM themes WHERE name = $1', [themeName]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Theme not found' });
+      }
+      cssContent = result.rows[0].content;
+    } else {
+      return res.status(400).json({ error: 'Theme not found' });
+    }
+    
+    // Write CSS to style.css
+    writeFileSync(STYLE_PATH, cssContent, 'utf-8');
+    
+    // Update presentation's theme reference in DB
+    if (db) {
+      await db.query(
+        'UPDATE presentations SET theme_name = $1 WHERE name = $2',
+        [themeName, presentationName]
+      );
+    }
+    
+    console.log(`Applied theme "${themeName}" to ${presentationName}`);
+    res.json({ success: true, message: `Theme "${themeName}" applied` });
+  } catch (err) {
+    console.error('Apply theme error:', err);
+    res.status(500).json({ error: 'Failed to apply theme' });
+  }
+});
+
+// API: Get current applied theme for presentation
+app.get('/api/themes/current', async (req: Request, res: Response) => {
+  const name = (req.query.presentation as string) || 'slides.md';
+  
+  try {
+    if (db) {
+      const result = await db.query('SELECT theme_name FROM presentations WHERE name = $1', [name]);
+      if (result.rows.length > 0 && result.rows[0].theme_name) {
+        return res.json({ themeName: result.rows[0].theme_name });
+      }
+    }
+    res.json({ themeName: 'default' });
+  } catch (err) {
+    res.json({ themeName: 'default' });
+  }
+});
+
+// ==========================================
 // PDF EXPORT
 // ==========================================
-const PRESENTATION_DIR = path.dirname(SLIDES_PATH);
 const PDF_PATH = path.join(PRESENTATION_DIR, 'slides-export.pdf');
 let exportInProgress = false;
 
