@@ -599,13 +599,13 @@ Smaller text, tight bullets, pulled up slightly.
 
 ---
 
-## Exporting to PDF
+## Exporting to PDF / PPTX / PNG
 
 ### Method 1: Browser Export (Recommended)
 
-1. Click **"Export PDF"** button in the editor
+1. Click **"Export"** button in the editor header
 2. A new tab opens with Slidev's export interface
-3. Choose format: **PDF**, **PPTX**, or **PNG images**
+3. Choose your format: **PDF**, **PPTX**, or **PNG images**
 4. Click **Download**
 
 ### Method 2: Print to PDF

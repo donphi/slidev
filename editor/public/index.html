@@ -217,12 +217,12 @@
           <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-xs bg-blue-700 rounded">⌘S</kbd>
         </button>
         
-        <!-- Export PDF (Browser Exporter) -->
-        <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Opens Slidev's browser exporter">
+        <!-- Export (Browser Exporter - PDF, PPTX, PNG) -->
+        <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Opens Slidev's browser exporter (PDF, PPTX, PNG)">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
-          <span class="hidden md:inline">Export PDF</span>
+          <span class="hidden md:inline">Export</span>
         </button>
         
         <!-- Download MD -->
@@ -986,7 +986,7 @@ Questions?
       const exportUrl = getSlidevBaseUrl() + 'export';
       window.open(exportUrl, '_blank');
       
-      showToast('Export page opened in new tab. Use the browser exporter to download your PDF.', 'info', 5000);
+      showToast('Export page opened. Choose PDF, PPTX, or PNG format.', 'info', 4000);
     }
 
     function downloadMd() {

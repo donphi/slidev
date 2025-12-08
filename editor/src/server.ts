@@ -297,12 +297,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 let slidevRestarting = false;
 
 // Create proxy middleware for Slidev
+// Mounted at /slidev, proxies to Slidev running at SLIDEV_URL (default: http://localhost:3030)
+// Express strips /slidev prefix, so we pass the remaining path directly to Slidev
 const slidevProxy = createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
   ws: true,
-  // Preserve the /slidev base path
-  pathRewrite: (p) => p.startsWith('/slidev') ? p : `/slidev${p}`,
+  // No pathRewrite needed - Express strips /slidev, we forward the rest as-is
+  // e.g., /slidev/export → /export at target
   on: {
     proxyRes: (proxyRes) => { 
       slidevRestarting = false;
