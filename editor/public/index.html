@@ -193,28 +193,58 @@
       <!-- Resizer -->
       <div id="resizer" class="w-1.5 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
 
-      <!-- Preview Panel -->
-      <div class="flex flex-col flex-1 bg-white relative">
+      <!-- Presentation Panel (no iframe - opens in new tab) -->
+      <div class="flex flex-col flex-1 bg-slate-900 relative">
         <div class="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2"/>
             </svg>
-            <span class="text-sm text-slate-400">Preview</span>
-            <span id="preview-status" class="text-xs text-slate-500 is-hidden"></span>
+            <span class="text-sm text-slate-400">Presentation</span>
           </div>
-          <button id="btn-refresh" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-smooth" title="Refresh Preview">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-          </button>
         </div>
-        <!-- Loading bar - shows during Slidev restart -->
-        <div id="preview-loader" class="preview-loader is-hidden">
-          <div class="preview-loader-bar"></div>
+        
+        <!-- Presentation Actions -->
+        <div class="flex-1 flex flex-col items-center justify-center p-8">
+          <div class="text-center max-w-md">
+            <div class="text-6xl mb-6">📊</div>
+            <h2 class="text-2xl font-bold text-white mb-3">Your Presentation</h2>
+            <p class="text-slate-400 mb-8">Edit your slides on the left. Click below to view the live presentation in a new tab. Changes auto-refresh!</p>
+            
+            <button onclick="openPresentation()" class="w-full px-6 py-4 bg-blue-600 hover:bg-blue-500 text-white text-lg font-semibold rounded-xl transition-smooth flex items-center justify-center gap-3 mb-4">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Open Presentation
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+              </svg>
+            </button>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="openPresenterMode()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-smooth flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Presenter Mode
+              </button>
+              <button onclick="openOverview()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-smooth flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                </svg>
+                Overview
+              </button>
+            </div>
+            
+            <div class="mt-8 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+              <p class="text-xs text-slate-500">
+                <strong class="text-slate-400">Tip:</strong> Open the presentation in a new tab and arrange your windows side-by-side. 
+                Slides auto-reload when you save changes!
+              </p>
+            </div>
+          </div>
         </div>
-        <iframe id="preview-frame" class="flex-1 w-full h-full border-0" src="about:blank"></iframe>
       </div>
     </main>
 
@@ -463,38 +493,31 @@
       }
     }
 
-    // Show/hide preview loading bar
+    // Legacy preview loading functions (no longer used but kept for compatibility)
     function showPreviewLoading(message = 'Loading...') {
-      const loader = document.getElementById('preview-loader');
-      const status = document.getElementById('preview-status');
-      loader.classList.remove('is-hidden');
-      status.textContent = message;
-      status.classList.remove('is-hidden');
+      // No-op: preview panel removed, presentation opens in new tab
     }
     
     function hidePreviewLoading() {
-      const loader = document.getElementById('preview-loader');
-      const status = document.getElementById('preview-status');
-      loader.classList.add('is-hidden');
-      status.classList.add('is-hidden');
+      // No-op: preview panel removed, presentation opens in new tab
     }
 
-    function refreshPreview() {
-      const frame = document.getElementById('preview-frame');
-      showPreviewLoading('Waiting for Slidev...');
-      frame.src = slidevUrl;
+    // Open presentation in new tab (no iframe, no proxy issues)
+    function openPresentation() {
+      window.open(slidevUrl, '_blank');
     }
     
-    // Detect when iframe loads (Slidev is ready)
-    function setupPreviewLoadDetection() {
-      const frame = document.getElementById('preview-frame');
-      frame.addEventListener('load', () => {
-        // Small delay to ensure content is rendered
-        setTimeout(hidePreviewLoading, 200);
-      });
-      frame.addEventListener('error', () => {
-        // Keep loading indicator on error, it will retry
-      });
+    function openPresenterMode() {
+      window.open(slidevUrl + 'presenter/', '_blank');
+    }
+    
+    function openOverview() {
+      window.open(slidevUrl + 'overview/', '_blank');
+    }
+    
+    // Legacy function kept for compatibility
+    function refreshPreview() {
+      openPresentation();
     }
 
     async function exportPdf() {

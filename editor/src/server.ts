@@ -31,8 +31,14 @@ const initDatabase = async () => {
   try {
     db = new Pool({
       connectionString: DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 10000,  // 10 second timeout - don't hang forever
+      idleTimeoutMillis: 30000,
+      max: 10
     });
+    
+    // Test connection with timeout
+    console.log('🔄 Connecting to database...');
 
     // Create tables if they don't exist
     await db.query(`
@@ -77,9 +83,13 @@ const initDatabase = async () => {
     console.log('🗄️  Database connected and initialized');
     
     // Restore from database to files (database is source of truth)
-    await restoreFromDb();
+    try {
+      await restoreFromDb();
+    } catch (restoreErr) {
+      console.error('⚠️ Database restore failed (continuing anyway):', restoreErr);
+    }
   } catch (err) {
-    console.error('Database connection failed:', err);
+    console.error('❌ Database connection failed:', err);
     console.log('📁 Falling back to file system storage');
     db = null;
   }
@@ -103,11 +113,11 @@ const restoreFromDb = async () => {
     } else {
       // No data in DB yet - save current file as initial content
       if (existsSync(SLIDES_PATH)) {
-        const content = readFileSync(SLIDES_PATH, 'utf-8');
-        await db.query(
-          'INSERT INTO presentations (name, content) VALUES ($1, $2)',
-          ['slides.md', content]
-        );
+      const content = readFileSync(SLIDES_PATH, 'utf-8');
+      await db.query(
+        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
+        ['slides.md', content]
+      );
         console.log('📤 Saved initial slides.md to database');
       }
     }
@@ -255,83 +265,30 @@ app.use(authMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==========================================
-// SLIDEV PROXY
-// Proxy /slidev/* requests to the internal Slidev server
-// This allows external users to access Slidev through the editor
+// SIMPLE PROXY - Just pass through to Slidev
+// Opens in new tab, minimal interference
 // ==========================================
-
-// Track Slidev restart state to suppress expected errors during rebuilds
 let slidevRestarting = false;
-let lastProxyError = 0;
-const PROXY_ERROR_THROTTLE = 2000; // Only log errors every 2 seconds
 
 app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
-  ws: true,  // Enable WebSocket proxy for HMR
-  // Express removes the mount path before forwarding. Ensure Slidev's base path
-  // (`/slidev`) is always present without duplicating it.
-  pathRewrite: (path) => {
-    if (!path || path === '/') return '/slidev/';
-    return path.startsWith('/slidev') ? path : `/slidev${path}`;
-  },
+  ws: true,
+  pathRewrite: (p) => p.startsWith('/slidev') ? p : `/slidev${p}`,
+  logLevel: 'silent',
   on: {
-    proxyReq: (_proxyReq, _req) => {
-      // Removed verbose logging - uncomment below for debugging:
-      // const originalPath = (req as Request).originalUrl || req.url || '/';
-      // console.log(`🔀 Proxy: ${req.method} ${originalPath}`);
-    },
-    proxyRes: () => {
-      // Successful response means Slidev is back up
-      if (slidevRestarting) {
-        console.log('✅ Slidev is back online');
-        slidevRestarting = false;
-      }
-    },
-    error: (err, _req, res) => {
-      const now = Date.now();
-      const errMsg = (err as Error).message || '';
-      
-      // Common errors during Slidev restart - throttle logging
-      const isRestartError = errMsg.includes('ECONNRESET') || 
-                            errMsg.includes('ECONNREFUSED') ||
-                            errMsg.includes('socket hang up');
-      
-      if (isRestartError) {
-        if (!slidevRestarting) {
-          slidevRestarting = true;
-          console.log('⏳ Slidev is restarting... (this is normal after saving)');
-        }
-        // Don't spam logs during restart
-        if (now - lastProxyError < PROXY_ERROR_THROTTLE) {
-          return;
-        }
-        lastProxyError = now;
-      } else {
-        // Log unexpected errors
-        console.error('❌ Proxy error:', errMsg);
-      }
-      
-      // Send a friendly error response if we can
-      // Note: res can be ServerResponse or Socket - only ServerResponse has writeHead
+    proxyRes: () => { slidevRestarting = false; },
+    error: (_err, _req, res) => {
+      slidevRestarting = true;
+      // Send simple error page
       if (res && typeof (res as any).writeHead === 'function') {
         try {
           const httpRes = res as any;
           if (!httpRes.headersSent) {
             httpRes.writeHead(503, { 'Content-Type': 'text/html' });
-            httpRes.end(`
-              <html>
-                <body style="font-family: system-ui; padding: 40px; text-align: center;">
-                  <h2>⏳ Slidev is restarting...</h2>
-                  <p>This happens after saving changes. Please wait a moment.</p>
-                  <p><button onclick="location.reload()">Refresh</button></p>
-                </body>
-              </html>
-            `);
+            httpRes.end('<html><body style="font-family:system-ui;padding:40px;text-align:center"><h2>⏳ Slidev is starting...</h2><p>Refresh in a few seconds</p></body></html>');
           }
-        } catch (e) {
-          // Response already sent or socket closed, ignore
-        }
+        } catch (e) { /* ignore */ }
       }
     }
   }
@@ -341,11 +298,10 @@ app.use('/slidev', createProxyMiddleware({
 // API ENDPOINTS
 // ==========================================
 
-// Config
+// Config - Slidev accessed via /slidev proxy path
 app.get('/api/config', (_req: Request, res: Response) => {
   res.json({ 
-    // Always use proxy route - never expose internal localhost URL
-    slidevUrl: '/slidev',
+    slidevUrl: '/slidev/',  // Proxy path - opens in new tab
     appName: 'Sli.dev Editor',
     maxHistory: MAX_HISTORY,
     hasDatabase: !!db
@@ -910,10 +866,15 @@ const start = async () => {
   console.log(`   STYLE_PATH: ${STYLE_PATH}`);
   console.log(`   style.css exists: ${existsSync(STYLE_PATH)}`);
   
+  // START SERVER FIRST - so healthcheck passes immediately
+  app.listen(PORT, () => {
+    console.log(`✅ Server listening on port ${PORT}`);
+  });
+  
+  // THEN connect to database (non-blocking)
   await initDatabase();
   
-  app.listen(PORT, () => {
-    console.log(`
+  console.log(`
 ╔═══════════════════════════════════════════════════╗
 ║           Sli.dev Editor Server                   ║
 ╠═══════════════════════════════════════════════════╣
@@ -923,8 +884,10 @@ const start = async () => {
 ║  History:   ${MAX_HISTORY} backups
 ║  Auth:      ${EDITOR_PASSWORD ? '🔒 Password protected' : '🔓 Open'}
 ╚═══════════════════════════════════════════════════╝
-    `);
-  });
+  `);
 };
 
-start();
+start().catch(err => {
+  console.error('❌ Fatal startup error:', err);
+  process.exit(1);
+});
