@@ -311,15 +311,15 @@ app.get('/api/config', (_req: Request, res: Response) => {
   });
 });
 
-// List all presentations
+// List all presentations (includes linked theme)
 app.get('/api/presentations', async (_req: Request, res: Response) => {
   try {
     if (db) {
-      const result = await db.query('SELECT name, updated_at FROM presentations ORDER BY updated_at DESC');
+      const result = await db.query('SELECT name, theme_name, updated_at FROM presentations ORDER BY updated_at DESC');
       res.json({ presentations: result.rows });
     } else {
       // File system: just return the default file
-      res.json({ presentations: [{ name: 'slides.md', updated_at: new Date() }] });
+      res.json({ presentations: [{ name: 'slides.md', theme_name: 'default', updated_at: new Date() }] });
     }
   } catch (err) {
     console.error('List presentations error:', err);
@@ -359,6 +359,8 @@ app.post('/api/slides', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Content must be a string' });
   }
   
+  const savedAt = new Date().toISOString();
+  
   try {
     if (db) {
       // Get current content for backup
@@ -381,21 +383,26 @@ app.post('/api/slides', async (req: Request, res: Response) => {
     
     // Also write to file system so Sli.dev can read it
     writeFileSync(SLIDES_PATH, content, 'utf-8');
-    console.log(`📝 Slides saved: ${name} (Slidev will reload)`);
+    console.log(`📝 Slides saved: ${name} at ${savedAt} (Slidev will reload)`);
     
     // Slidev will restart after file change - set flag to suppress proxy errors
     slidevRestarting = true;
     
-    res.json({ success: true, message: 'Saved!' });
+    res.json({ 
+      success: true, 
+      message: 'Saved!',
+      savedAt,
+      storage: db ? 'database' : 'filesystem'
+    });
   } catch (err) {
     console.error('Save error:', err);
     res.status(500).json({ error: 'Failed to save' });
   }
 });
 
-// Create new presentation
+// Create new presentation (with optional theme linkage)
 app.post('/api/presentations', async (req: Request, res: Response) => {
-  const { name, content = '' } = req.body;
+  const { name, content = '', theme_name = 'default' } = req.body;
   
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Name is required' });
@@ -404,10 +411,11 @@ app.post('/api/presentations', async (req: Request, res: Response) => {
   try {
     if (db) {
       await db.query(
-        'INSERT INTO presentations (name, content) VALUES ($1, $2)',
-        [name, content]
+        'INSERT INTO presentations (name, content, theme_name) VALUES ($1, $2, $3)',
+        [name, content, theme_name]
       );
-      res.json({ success: true, name });
+      console.log(`📄 Created presentation: ${name} (theme: ${theme_name})`);
+      res.json({ success: true, name, theme_name });
     } else {
       res.status(400).json({ error: 'Database required for multiple presentations' });
     }

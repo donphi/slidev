@@ -45,34 +45,88 @@
     .spinner { animation: spin 1s linear infinite; }
     .modal-backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
     
-    /* Preview loading bar */
-    .preview-loader {
-      position: absolute;
-      top: 41px; /* Below the header */
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: #1e293b;
-      z-index: 10;
-      overflow: hidden;
+    /* Toast notifications */
+    @keyframes toast-in {
+      0% { transform: translateX(100%); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
     }
-    .preview-loader-bar {
-      height: 100%;
-      width: 30%;
-      background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
-      animation: loading-slide 1.5s ease-in-out infinite;
+    @keyframes toast-out {
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(100%); opacity: 0; }
     }
-    @keyframes loading-slide {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(400%); }
+    .toast-enter { animation: toast-in 0.3s ease-out forwards; }
+    .toast-exit { animation: toast-out 0.3s ease-in forwards; }
+    
+    /* Landing page gradient */
+    .landing-gradient {
+      background: radial-gradient(ellipse at top, #1e293b 0%, #0d1117 50%);
     }
-    /* Note: DO NOT add .hidden here - it conflicts with Tailwind's hidden class */
-    .preview-loader.is-hidden { display: none; }
-    #preview-status.is-hidden { display: none; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
-  <div id="app" class="flex flex-col h-screen">
+  
+  <!-- Toast Container (top right) -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Landing Page / File Selector -->
+  <div id="landing-page" class="fixed inset-0 z-50 landing-gradient flex items-center justify-center">
+    <div class="w-full max-w-2xl mx-4">
+      <!-- Logo and Title -->
+      <div class="text-center mb-8">
+        <div class="text-6xl mb-4">📊</div>
+        <h1 class="text-3xl font-bold text-white mb-2">Sli.dev Editor</h1>
+        <p class="text-slate-400">Select a presentation to edit or create a new one</p>
+      </div>
+      
+      <!-- Storage Status -->
+      <div class="flex justify-center mb-6">
+        <span id="landing-storage-badge" class="px-3 py-1 text-sm font-medium bg-slate-800 text-slate-400 rounded-full">
+          Connecting...
+        </span>
+      </div>
+      
+      <!-- Presentations List -->
+      <div class="bg-slate-900/80 backdrop-blur border border-slate-700 rounded-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-white">Your Presentations</h2>
+          <button onclick="showNewPresentationForm()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-smooth">
+            + New Presentation
+          </button>
+        </div>
+        
+        <!-- New Presentation Form (hidden by default) -->
+        <div id="new-presentation-form" class="hidden px-6 py-4 bg-slate-800/50 border-b border-slate-700">
+          <div class="flex gap-2">
+            <input id="landing-new-file-name" type="text" placeholder="my-presentation.md" 
+              class="flex-1 px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500">
+            <select id="landing-new-theme" class="px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+              <option value="default">Theme: default</option>
+            </select>
+            <button onclick="createNewPresentation()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-smooth">Create</button>
+            <button onclick="hideNewPresentationForm()" class="px-4 py-2 text-slate-400 hover:text-white transition-smooth">Cancel</button>
+          </div>
+        </div>
+        
+        <!-- Presentations List -->
+        <div id="landing-files-list" class="max-h-80 overflow-y-auto">
+          <div class="px-6 py-12 text-center">
+            <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full spinner mx-auto mb-3"></div>
+            <p class="text-slate-500">Loading presentations...</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Actions -->
+      <div class="mt-6 flex justify-center gap-4 text-sm">
+        <a href="#" onclick="loadDefaultAndEnter(); return false;" class="text-slate-400 hover:text-white transition-smooth">
+          Skip → Load default presentation
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until file is selected) -->
+  <div id="app" class="flex flex-col h-screen hidden">
     
     <!-- Header -->
     <header class="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
@@ -85,8 +139,8 @@
       </div>
       
       <div class="flex items-center gap-2">
-        <!-- File Selector (only shows with database) -->
-        <div id="file-selector" class="hidden relative">
+        <!-- File Selector -->
+        <div id="file-selector" class="relative">
           <button id="btn-files" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
@@ -98,7 +152,7 @@
           </button>
         </div>
 
-        <!-- Theme Selector -->
+        <!-- Theme Selector (shows linked theme) -->
         <div id="theme-selector" class="relative">
           <button id="btn-themes" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Themes">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,8 +182,8 @@
           <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-xs bg-blue-700 rounded">⌘S</kbd>
         </button>
         
-        <!-- Export PDF -->
-        <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth">
+        <!-- Export PDF (Browser Exporter) -->
+        <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Opens Slidev's browser exporter">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
@@ -137,7 +191,7 @@
         </button>
         
         <!-- Download MD -->
-        <button id="btn-download" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-smooth">
+        <button id="btn-download" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-smooth" title="Download Markdown file">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
           </svg>
@@ -176,6 +230,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
           </svg>
           <span class="text-sm font-medium text-white">style.css</span>
+          <span id="editing-theme-name" class="ml-2 text-xs text-slate-500">(default)</span>
           <div class="flex-1"></div>
           <button onclick="saveAsTheme()" class="px-2 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-smooth">
             Save Theme
@@ -224,13 +279,14 @@
       </div>
     </main>
 
-    <!-- Footer -->
+    <!-- Footer with Last Saved Info -->
     <footer class="flex items-center justify-between px-4 py-1.5 bg-slate-900 border-t border-slate-800 text-xs text-slate-500">
       <div class="flex items-center gap-4">
         <span id="file-type">Markdown</span>
         <span id="cursor-position">Ln 1, Col 1</span>
       </div>
       <div class="flex items-center gap-4">
+        <span id="last-saved-info" class="text-slate-600">Not yet saved</span>
         <span id="char-count">0 characters</span>
         <span>UTF-8</span>
       </div>
@@ -240,9 +296,9 @@
   <!-- File Manager Modal -->
   <div id="files-modal" class="fixed inset-0 z-50 hidden">
     <div class="modal-backdrop absolute inset-0" onclick="closeFilesModal()"></div>
-    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-        <h2 class="text-lg font-semibold text-white">Presentations</h2>
+        <h2 class="text-lg font-semibold text-white">Switch Presentation</h2>
         <button onclick="closeFilesModal()" class="p-1 text-slate-400 hover:text-white rounded">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -257,6 +313,11 @@
         <div id="files-list" class="space-y-2 max-h-64 overflow-y-auto">
           <p class="text-slate-500 text-center py-4">Loading...</p>
         </div>
+      </div>
+      <div class="px-6 py-3 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
+        <button onclick="goToLandingPage()" class="text-sm text-slate-400 hover:text-white transition-smooth">
+          ← Back to presentation selector
+        </button>
       </div>
     </div>
   </div>
@@ -285,7 +346,7 @@
     </div>
   </div>
 
-  <!-- Themes Modal -->
+  <!-- Themes Modal (with linkage info) -->
   <div id="themes-modal" class="fixed inset-0 z-50 hidden">
     <div class="modal-backdrop absolute inset-0" onclick="closeThemesModal()"></div>
     <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
@@ -297,14 +358,23 @@
           </svg>
         </button>
       </div>
+      <div class="px-6 py-3 bg-slate-800/30 border-b border-slate-700">
+        <div class="flex items-center gap-2 text-sm">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          <span class="text-slate-400">Linked to:</span>
+          <span id="theme-linked-file" class="text-white font-medium">slides.md</span>
+        </div>
+      </div>
       <div class="p-6">
-        <p class="text-sm text-slate-400 mb-4">Select a theme to apply, or switch to Styles tab to create custom themes.</p>
+        <p class="text-sm text-slate-400 mb-4">Select a theme to apply. Changing themes will update the link for this presentation.</p>
         <div id="themes-list" class="space-y-2 max-h-64 overflow-y-auto">
           <p class="text-slate-500 text-center py-4">Loading...</p>
         </div>
       </div>
       <div class="px-6 py-4 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
-        <p class="text-xs text-slate-500">💡 Tip: Edit the default theme in Styles tab and save as a new theme</p>
+        <p class="text-xs text-slate-500">💡 Tip: Edit the CSS in the Styles panel and save as a new theme</p>
       </div>
     </div>
   </div>
@@ -332,107 +402,374 @@
     </div>
   </div>
 
+  <!-- Theme Change Confirmation Modal -->
+  <div id="theme-confirm-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeThemeConfirmModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Change Theme?</h2>
+        <button onclick="closeThemeConfirmModal()" class="p-1 text-slate-400 hover:text-white rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-300 mb-2">This will update the theme linked to:</p>
+        <p class="text-white font-medium mb-4" id="theme-confirm-file">slides.md</p>
+        <p class="text-sm text-slate-400 mb-4">
+          From: <span id="theme-confirm-old" class="text-amber-400">default</span><br>
+          To: <span id="theme-confirm-new" class="text-emerald-400">new-theme</span>
+        </p>
+        <div class="flex justify-end gap-2">
+          <button onclick="closeThemeConfirmModal()" class="px-4 py-2 text-slate-400 hover:text-white transition-smooth">Cancel</button>
+          <button onclick="confirmThemeChange()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-smooth">Apply Theme</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Monaco Editor Loader -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
-    // Global state
+    // ==========================================
+    // GLOBAL STATE
+    // ==========================================
     let editor;
     let stylesEditor;
-    let slidevUrl = '/slidev';  // Always use proxy - never localhost
+    let slidevUrl = '/slidev';
     let isDirty = false;
     let stylesIsDirty = false;
     let maxHistory = 10;
     let hasDatabase = false;
     let currentFileName = 'slides.md';
     let currentThemeName = 'default';
-    let currentTab = 'markdown';
+    let lastSavedTime = null;
+    let pendingThemeChange = null;
+    let allPresentations = [];
+    let allThemes = [];
 
-    // Initialize
-    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
+    // ==========================================
+    // TOAST NOTIFICATIONS
+    // ==========================================
+    function showToast(message, type = 'success', duration = 4000) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const icons = {
+        success: '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+        error: '<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+        warning: '<svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+        info: '<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      };
+      
+      const bgColors = {
+        success: 'bg-emerald-900/90 border-emerald-700',
+        error: 'bg-red-900/90 border-red-700',
+        warning: 'bg-amber-900/90 border-amber-700',
+        info: 'bg-blue-900/90 border-blue-700'
+      };
+      
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg border backdrop-blur shadow-lg toast-enter ${bgColors[type]}`;
+      toast.innerHTML = `
+        ${icons[type]}
+        <div class="flex-1">
+          <p class="text-white text-sm font-medium">${message}</p>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-exit');
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
 
-    require(['vs/editor/editor.main'], async function() {
-      // Fetch config
+    // ==========================================
+    // LANDING PAGE
+    // ==========================================
+    async function initLandingPage() {
       try {
         const config = await fetch('/api/config').then(r => r.json());
         slidevUrl = config.slidevUrl;
         maxHistory = config.maxHistory || 10;
         hasDatabase = config.hasDatabase;
         
-        // Update UI based on storage mode
-        const badge = document.getElementById('storage-badge');
+        const badge = document.getElementById('landing-storage-badge');
         if (hasDatabase) {
-          badge.textContent = '🗄️ Database';
-          badge.className = 'px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-400 rounded';
-          document.getElementById('file-selector').classList.remove('hidden');
+          badge.textContent = '🗄️ Connected to Database';
+          badge.className = 'px-3 py-1 text-sm font-medium bg-purple-500/20 text-purple-400 rounded-full';
         } else {
-          badge.textContent = '📁 Local';
-          badge.className = 'px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded';
+          badge.textContent = '📁 Local Storage Only';
+          badge.className = 'px-3 py-1 text-sm font-medium bg-amber-500/20 text-amber-400 rounded-full';
         }
+        
+        await loadLandingPresentations();
+        await loadThemesForDropdown();
       } catch (e) {
-        console.warn('Could not fetch config');
+        console.error('Init error:', e);
+        document.getElementById('landing-storage-badge').textContent = '⚠️ Connection Error';
       }
+    }
 
-      // No iframe - presentation opens in new tab
-
-      // Create markdown editor
-      editor = monaco.editor.create(document.getElementById('editor-container'), {
-        value: '# Loading...',
-        language: 'markdown',
-        theme: 'vs-dark',
-        fontSize: 14,
-        fontFamily: "'Fira Code', monospace",
-        fontLigatures: true,
-        minimap: { enabled: false },
-        wordWrap: 'on',
-        automaticLayout: true,
-        padding: { top: 8 },
-        scrollBeyondLastLine: false
-      });
-
-      // Create styles editor (both visible in 3-panel layout)
-      stylesEditor = monaco.editor.create(document.getElementById('styles-container'), {
-        value: '/* Loading styles... */',
-        language: 'css',
-        theme: 'vs-dark',
-        fontSize: 14,
-        fontFamily: "'Fira Code', monospace",
-        fontLigatures: true,
-        minimap: { enabled: false },
-        wordWrap: 'on',
-        automaticLayout: true,
-        padding: { top: 8 },
-        scrollBeyondLastLine: false
-      });
+    async function loadLandingPresentations() {
+      const listEl = document.getElementById('landing-files-list');
       
-      stylesEditor.onDidChangeModelContent(() => {
-        stylesIsDirty = true;
-        updateStatus('Styles modified', 'warning');
-      });
-      
-      stylesEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => saveAsTheme());
+      try {
+        const [presRes, themesRes] = await Promise.all([
+          fetch('/api/presentations'),
+          fetch('/api/themes')
+        ]);
+        
+        const presData = await presRes.json();
+        const themesData = await themesRes.json();
+        
+        allPresentations = presData.presentations || [];
+        allThemes = themesData.themes || [];
+        
+        if (allPresentations.length === 0) {
+          listEl.innerHTML = `
+            <div class="px-6 py-12 text-center">
+              <div class="text-4xl mb-4">📝</div>
+              <p class="text-slate-400 mb-4">No presentations yet</p>
+              <button onclick="showNewPresentationForm()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-smooth">
+                Create your first presentation
+              </button>
+            </div>
+          `;
+          return;
+        }
+        
+        listEl.innerHTML = allPresentations.map(p => {
+          const themeName = p.theme_name || 'default';
+          const updatedAt = p.updated_at ? new Date(p.updated_at).toLocaleString() : 'Unknown';
+          return `
+            <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-800/50 border-b border-slate-800 last:border-b-0 cursor-pointer group transition-smooth"
+                 onclick="selectPresentation('${p.name}')">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-xl">
+                  📄
+                </div>
+                <div>
+                  <p class="text-white font-medium">${p.name}</p>
+                  <p class="text-xs text-slate-500">
+                    Theme: <span class="text-purple-400">${themeName}</span>
+                    • Last saved: ${updatedAt}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        listEl.innerHTML = `
+          <div class="px-6 py-12 text-center">
+            <div class="text-4xl mb-4">⚠️</div>
+            <p class="text-red-400">Failed to load presentations</p>
+          </div>
+        `;
+      }
+    }
 
-      await loadSlides();
+    async function loadThemesForDropdown() {
+      const select = document.getElementById('landing-new-theme');
+      try {
+        const res = await fetch('/api/themes');
+        const data = await res.json();
+        select.innerHTML = data.themes.map(t => 
+          `<option value="${t.name}">Theme: ${t.name}${t.isDefault ? ' (built-in)' : ''}</option>`
+        ).join('');
+      } catch (e) {
+        // Keep default option
+      }
+    }
+
+    function showNewPresentationForm() {
+      document.getElementById('new-presentation-form').classList.remove('hidden');
+      document.getElementById('landing-new-file-name').focus();
+    }
+
+    function hideNewPresentationForm() {
+      document.getElementById('new-presentation-form').classList.add('hidden');
+    }
+
+    async function createNewPresentation() {
+      const nameInput = document.getElementById('landing-new-file-name');
+      const themeSelect = document.getElementById('landing-new-theme');
       
-      // Load styles into the styles editor
+      let name = nameInput.value.trim();
+      if (!name) {
+        showToast('Please enter a presentation name', 'warning');
+        return;
+      }
+      if (!name.endsWith('.md')) name += '.md';
+      
+      const themeName = themeSelect.value;
+      const boilerplate = `---
+theme: default
+layout: intro
+---
+
+# ${name.replace('.md', '')}
+
+## Your presentation starts here
+
+---
+
+# Slide 2
+
+- Point one
+- Point two
+- Point three
+
+---
+
+# Thank You
+
+Questions?
+`;
+      
+      try {
+        const res = await fetch('/api/presentations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, content: boilerplate, theme_name: themeName })
+        });
+        
+        if (res.ok) {
+          showToast(`Created "${name}"`, 'success');
+          nameInput.value = '';
+          hideNewPresentationForm();
+          await selectPresentation(name);
+        } else {
+          const data = await res.json();
+          showToast(data.error || 'Failed to create', 'error');
+        }
+      } catch (err) {
+        showToast('Error creating presentation', 'error');
+      }
+    }
+
+    async function selectPresentation(name) {
+      currentFileName = name;
+      
+      // Hide landing, show app
+      document.getElementById('landing-page').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
+      
+      // Initialize Monaco if not already done
+      if (!editor) {
+        await initializeEditors();
+      }
+      
+      // Load the selected presentation
+      await loadSlides(name);
       await loadCurrentTheme();
-
-      editor.onDidChangeCursorPosition((e) => {
-        document.getElementById('cursor-position').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
-      });
-
-      editor.onDidChangeModelContent(() => {
-        isDirty = true;
-        document.getElementById('char-count').textContent = `${editor.getValue().length} characters`;
-        updateStatus('Modified', 'warning');
-      });
-
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
       
-      // Setup resizer between MD and CSS panels
-      setupResizer();
-    });
-    
-    // Draggable resizer between MD and CSS panels
+      // Update UI
+      updateStorageBadge();
+    }
+
+    function loadDefaultAndEnter() {
+      selectPresentation('slides.md');
+    }
+
+    function goToLandingPage() {
+      if (isDirty && !confirm('Unsaved changes will be lost. Continue?')) return;
+      
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('landing-page').classList.remove('hidden');
+      closeFilesModal();
+      loadLandingPresentations();
+    }
+
+    // ==========================================
+    // EDITOR INITIALIZATION
+    // ==========================================
+    async function initializeEditors() {
+      return new Promise((resolve) => {
+        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
+        
+        require(['vs/editor/editor.main'], function() {
+          // Markdown editor
+          editor = monaco.editor.create(document.getElementById('editor-container'), {
+            value: '# Loading...',
+            language: 'markdown',
+            theme: 'vs-dark',
+            fontSize: 14,
+            fontFamily: "'Fira Code', monospace",
+            fontLigatures: true,
+            minimap: { enabled: false },
+            wordWrap: 'on',
+            automaticLayout: true,
+            padding: { top: 8 },
+            scrollBeyondLastLine: false
+          });
+
+          // CSS editor
+          stylesEditor = monaco.editor.create(document.getElementById('styles-container'), {
+            value: '/* Loading styles... */',
+            language: 'css',
+            theme: 'vs-dark',
+            fontSize: 14,
+            fontFamily: "'Fira Code', monospace",
+            fontLigatures: true,
+            minimap: { enabled: false },
+            wordWrap: 'on',
+            automaticLayout: true,
+            padding: { top: 8 },
+            scrollBeyondLastLine: false
+          });
+          
+          // Event handlers
+          stylesEditor.onDidChangeModelContent(() => {
+            stylesIsDirty = true;
+            updateStatus('Styles modified', 'warning');
+          });
+          
+          stylesEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => saveAsTheme());
+
+          editor.onDidChangeCursorPosition((e) => {
+            document.getElementById('cursor-position').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+          });
+
+          editor.onDidChangeModelContent(() => {
+            isDirty = true;
+            document.getElementById('char-count').textContent = `${editor.getValue().length} characters`;
+            updateStatus('Modified', 'warning');
+          });
+
+          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
+          
+          setupResizer();
+          setupEventListeners();
+          
+          resolve();
+        });
+      });
+    }
+
+    function updateStorageBadge() {
+      const badge = document.getElementById('storage-badge');
+      if (hasDatabase) {
+        badge.textContent = '🗄️ Database';
+        badge.className = 'px-2 py-0.5 text-xs font-medium bg-purple-500/20 text-purple-400 rounded';
+      } else {
+        badge.textContent = '📁 Local';
+        badge.className = 'px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded';
+      }
+    }
+
+    // ==========================================
+    // RESIZER
+    // ==========================================
     function setupResizer() {
       const resizer = document.getElementById('resizer-md-css');
       const mdPanel = document.getElementById('md-panel');
@@ -457,15 +794,12 @@
         const containerWidth = containerRect.width;
         const mouseX = e.clientX - containerRect.left;
         
-        // Calculate percentages (leave 20% for preview panel)
-        const totalEditorWidth = containerWidth * 0.8; // 80% for both editors
         const mdPercent = Math.max(20, Math.min(60, (mouseX / containerWidth) * 100));
-        const cssPercent = 80 - mdPercent; // Remaining of the 80%
+        const cssPercent = 80 - mdPercent;
         
         mdPanel.style.width = mdPercent + '%';
         stylesPanel.style.width = cssPercent + '%';
         
-        // Trigger Monaco layout update
         if (editor) editor.layout();
         if (stylesEditor) stylesEditor.layout();
       });
@@ -479,7 +813,9 @@
       });
     }
 
-    // Load slides
+    // ==========================================
+    // SLIDES LOADING & SAVING
+    // ==========================================
     async function loadSlides(name = currentFileName) {
       try {
         updateStatus('Loading...', 'loading');
@@ -503,7 +839,6 @@
       }
     }
 
-    // Save slides
     async function saveSlides() {
       try {
         updateStatus('Saving...', 'loading');
@@ -517,20 +852,39 @@
         
         if (res.ok) {
           isDirty = false;
+          lastSavedTime = new Date();
+          
+          // Update footer with save timestamp
+          updateLastSavedInfo();
+          
+          // Show success status and toast
           updateStatus('Saved ✓', 'success');
-          // Show loading bar and refresh preview
-          showPreviewLoading('Reloading...');
-          setTimeout(refreshPreview, 300);
+          showToast(`Saved to ${hasDatabase ? 'database' : 'file'} at ${lastSavedTime.toLocaleTimeString()}`, 'success', 3000);
         } else {
           updateStatus('Save failed', 'error');
+          showToast('Failed to save presentation', 'error');
         }
       } catch (err) {
         updateStatus('Save error', 'error');
+        showToast('Save error: ' + err.message, 'error');
         console.error(err);
       }
     }
 
-    // Open presentation in new tab
+    function updateLastSavedInfo() {
+      const el = document.getElementById('last-saved-info');
+      if (lastSavedTime) {
+        const timeStr = lastSavedTime.toLocaleTimeString();
+        const dateStr = lastSavedTime.toLocaleDateString();
+        el.innerHTML = `<span class="text-emerald-500">✓</span> Saved ${timeStr}`;
+        el.title = `Last saved: ${dateStr} ${timeStr}`;
+        el.className = 'text-slate-400';
+      }
+    }
+
+    // ==========================================
+    // PRESENTATION VIEWS
+    // ==========================================
     function openPresentation() {
       window.open(slidevUrl, '_blank');
     }
@@ -543,34 +897,20 @@
       window.open(slidevUrl + 'overview/', '_blank');
     }
 
+    // ==========================================
+    // PDF EXPORT (Browser Exporter)
+    // ==========================================
     async function exportPdf() {
-      // First, make sure we save any changes
+      // Save any pending changes first
       if (isDirty) {
         await saveSlides();
       }
       
-      updateStatus('Exporting PDF...', 'loading');
+      // Open Slidev's browser exporter
+      const exportUrl = slidevUrl.replace(/\/$/, '') + '/export';
+      window.open(exportUrl, '_blank');
       
-      try {
-        const res = await fetch('/api/export', { method: 'POST' });
-        const data = await res.json();
-        
-        if (res.ok && data.success) {
-          updateStatus('PDF ready!', 'success');
-          // Auto-download the PDF
-          window.location.href = '/api/export/download';
-        } else if (res.status === 409) {
-          updateStatus('Export in progress...', 'warning');
-          alert('An export is already in progress. Please wait.');
-        } else {
-          updateStatus('Export failed', 'error');
-          alert(data.error || 'Failed to export PDF');
-        }
-      } catch (err) {
-        updateStatus('Export error', 'error');
-        console.error('Export error:', err);
-        alert('Failed to export PDF. Check console for details.');
-      }
+      showToast('Export page opened in new tab. Use the browser exporter to download your PDF.', 'info', 5000);
     }
 
     function downloadMd() {
@@ -582,6 +922,7 @@
       a.download = currentFileName;
       a.click();
       URL.revokeObjectURL(url);
+      showToast(`Downloaded ${currentFileName}`, 'success');
     }
 
     function updateStatus(text, type) {
@@ -591,14 +932,12 @@
       if (type === 'success' && text !== 'Ready') setTimeout(() => updateStatus('Ready', 'success'), 2000);
     }
 
-    // File management
-    async function openFilesModal() {
-      if (!hasDatabase) {
-        alert('Database required for multiple presentations');
-        return;
-      }
+    // ==========================================
+    // FILE MANAGEMENT
+    // ==========================================
+    function openFilesModal() {
       document.getElementById('files-modal').classList.remove('hidden');
-      await loadFilesList();
+      loadFilesList();
     }
 
     function closeFilesModal() {
@@ -618,21 +957,25 @@
           return;
         }
         
-        listEl.innerHTML = data.presentations.map(p => `
-          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg group ${p.name === currentFileName ? 'ring-2 ring-blue-500' : ''}">
-            <button onclick="switchFile('${p.name}')" class="flex-1 text-left">
-              <span class="text-white">${p.name}</span>
-              ${p.name === currentFileName ? '<span class="ml-2 text-xs text-blue-400">(current)</span>' : ''}
-            </button>
-            ${p.name !== 'slides.md' ? `
-              <button onclick="deleteFile('${p.name}')" class="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
+        listEl.innerHTML = data.presentations.map(p => {
+          const themeName = p.theme_name || 'default';
+          return `
+            <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg group ${p.name === currentFileName ? 'ring-2 ring-blue-500' : ''}">
+              <button onclick="switchFile('${p.name}')" class="flex-1 text-left">
+                <span class="text-white">${p.name}</span>
+                <span class="ml-2 text-xs text-purple-400">(${themeName})</span>
+                ${p.name === currentFileName ? '<span class="ml-2 text-xs text-blue-400">(current)</span>' : ''}
               </button>
-            ` : ''}
-          </div>
-        `).join('');
+              ${p.name !== 'slides.md' ? `
+                <button onclick="deleteFile('${p.name}')" class="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
       } catch (err) {
         listEl.innerHTML = '<p class="text-red-400 text-center py-4">Failed to load</p>';
       }
@@ -642,7 +985,9 @@
       if (isDirty && !confirm('Unsaved changes will be lost. Continue?')) return;
       currentFileName = name;
       await loadSlides(name);
+      await loadCurrentTheme();
       closeFilesModal();
+      showToast(`Loaded "${name}"`, 'info');
     }
 
     async function createNewFile() {
@@ -662,12 +1007,13 @@
           input.value = '';
           await loadFilesList();
           await switchFile(name);
+          showToast(`Created "${name}"`, 'success');
         } else {
           const data = await res.json();
-          alert(data.error || 'Failed to create');
+          showToast(data.error || 'Failed to create', 'error');
         }
       } catch (err) {
-        alert('Error creating presentation');
+        showToast('Error creating presentation', 'error');
       }
     }
 
@@ -681,17 +1027,20 @@
             await switchFile('slides.md');
           }
           await loadFilesList();
+          showToast(`Deleted "${name}"`, 'success');
         }
       } catch (err) {
-        alert('Error deleting');
+        showToast('Error deleting', 'error');
       }
     }
 
-    // History
-    async function openHistoryModal() {
+    // ==========================================
+    // HISTORY
+    // ==========================================
+    function openHistoryModal() {
       document.getElementById('history-modal').classList.remove('hidden');
       document.getElementById('history-info').textContent = `Keeps last ${maxHistory} versions`;
-      await loadHistory();
+      loadHistory();
     }
 
     function closeHistoryModal() {
@@ -737,9 +1086,10 @@
           isDirty = true;
           updateStatus('Previewing backup', 'warning');
           closeHistoryModal();
+          showToast('Previewing backup. Save to keep changes.', 'info');
         }
       } catch (err) {
-        alert('Failed to load backup');
+        showToast('Failed to load backup', 'error');
       }
     }
 
@@ -754,33 +1104,27 @@
         if (data.success && data.content) {
           editor.setValue(data.content);
           isDirty = false;
+          lastSavedTime = new Date();
+          updateLastSavedInfo();
           updateStatus('Restored ✓', 'success');
           closeHistoryModal();
-          setTimeout(refreshPreview, 300);
+          showToast('Backup restored successfully', 'success');
         }
       } catch (err) {
         updateStatus('Restore error', 'error');
+        showToast('Failed to restore backup', 'error');
       }
     }
 
     // ==========================================
     // THEMES
     // ==========================================
-
-    // Legacy function - no longer needed with 3-panel layout
-    function switchTab(tab) {
-      // Both editors are now always visible, no tab switching needed
-      currentTab = tab;
-    }
-
     async function loadCurrentTheme() {
       try {
-        // First get which theme is applied
         const currentRes = await fetch(`/api/themes/current?presentation=${encodeURIComponent(currentFileName)}`);
         const currentData = await currentRes.json();
         currentThemeName = currentData.themeName || 'default';
         
-        // Then load that theme's content
         const themeRes = await fetch(`/api/themes/${encodeURIComponent(currentThemeName)}`);
         const themeData = await themeRes.json();
         
@@ -799,12 +1143,14 @@
     function updateThemeUI() {
       document.getElementById('current-theme-name').textContent = currentThemeName;
       const editingLabel = document.getElementById('editing-theme-name');
-      if (currentThemeName === 'default') {
-        editingLabel.textContent = 'default (read-only)';
-        editingLabel.className = 'text-xs text-amber-400 font-medium';
-      } else {
-        editingLabel.textContent = currentThemeName;
-        editingLabel.className = 'text-xs text-emerald-400 font-medium';
+      if (editingLabel) {
+        if (currentThemeName === 'default') {
+          editingLabel.textContent = '(default - read-only)';
+          editingLabel.className = 'ml-2 text-xs text-amber-400';
+        } else {
+          editingLabel.textContent = `(${currentThemeName})`;
+          editingLabel.className = 'ml-2 text-xs text-emerald-400';
+        }
       }
     }
 
@@ -826,9 +1172,10 @@
       }
     }
 
-    async function openThemesModal() {
+    function openThemesModal() {
       document.getElementById('themes-modal').classList.remove('hidden');
-      await loadThemesList();
+      document.getElementById('theme-linked-file').textContent = currentFileName;
+      loadThemesList();
     }
 
     function closeThemesModal() {
@@ -852,7 +1199,7 @@
             </div>
             <div class="flex gap-2">
               <button onclick="editTheme('${t.name}')" class="px-3 py-1 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded">Edit</button>
-              <button onclick="applyTheme('${t.name}')" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded ${t.name === currentThemeName ? 'opacity-50 cursor-not-allowed' : ''}">Apply</button>
+              <button onclick="requestApplyTheme('${t.name}')" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded ${t.name === currentThemeName ? 'opacity-50 cursor-not-allowed' : ''}" ${t.name === currentThemeName ? 'disabled' : ''}>Apply</button>
               ${!t.isDefault ? `
                 <button onclick="deleteTheme('${t.name}')" class="p-1 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -871,8 +1218,31 @@
     async function editTheme(name) {
       if (stylesEditor && stylesIsDirty && !confirm('Unsaved style changes will be lost. Continue?')) return;
       closeThemesModal();
-      switchTab('styles'); // This will create the editor if needed
       await loadTheme(name);
+    }
+
+    // Theme change with confirmation
+    function requestApplyTheme(name) {
+      if (name === currentThemeName) return;
+      
+      pendingThemeChange = name;
+      document.getElementById('theme-confirm-file').textContent = currentFileName;
+      document.getElementById('theme-confirm-old').textContent = currentThemeName;
+      document.getElementById('theme-confirm-new').textContent = name;
+      document.getElementById('theme-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeThemeConfirmModal() {
+      document.getElementById('theme-confirm-modal').classList.add('hidden');
+      pendingThemeChange = null;
+    }
+
+    async function confirmThemeChange() {
+      if (!pendingThemeChange) return;
+      
+      closeThemeConfirmModal();
+      await applyTheme(pendingThemeChange);
+      pendingThemeChange = null;
     }
 
     async function applyTheme(name) {
@@ -889,14 +1259,15 @@
           await loadTheme(name);
           updateStatus('Theme applied ✓', 'success');
           closeThemesModal();
-          setTimeout(refreshPreview, 500);
+          showToast(`Theme "${name}" applied to ${currentFileName}`, 'success');
         } else {
           const data = await res.json();
           updateStatus('Apply failed', 'error');
-          alert(data.error || 'Failed to apply theme');
+          showToast(data.error || 'Failed to apply theme', 'error');
         }
       } catch (err) {
         updateStatus('Apply error', 'error');
+        showToast('Failed to apply theme', 'error');
         console.error('Apply theme error:', err);
       }
     }
@@ -911,16 +1282,16 @@
             await applyTheme('default');
           }
           await loadThemesList();
+          showToast(`Deleted theme "${name}"`, 'success');
         }
       } catch (err) {
-        alert('Error deleting theme');
+        showToast('Error deleting theme', 'error');
       }
     }
 
     function saveAsTheme() {
       document.getElementById('save-theme-modal').classList.remove('hidden');
       const input = document.getElementById('new-theme-name');
-      // Suggest a name based on current theme
       if (currentThemeName === 'default') {
         input.value = 'my-theme';
       } else {
@@ -938,22 +1309,22 @@
       const name = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
       
       if (!name) {
-        alert('Please enter a theme name');
+        showToast('Please enter a theme name', 'warning');
         return;
       }
       
       if (name === 'default') {
-        alert('Cannot use "default" as theme name');
+        showToast('Cannot use "default" as theme name', 'warning');
         return;
       }
       
       if (!hasDatabase) {
-        alert('Database required to save custom themes');
+        showToast('Database required to save custom themes', 'warning');
         return;
       }
       
       if (!stylesEditor) {
-        alert('Please open the Styles tab first');
+        showToast('Styles editor not loaded', 'error');
         return;
       }
       
@@ -973,65 +1344,53 @@
           updateThemeUI();
           closeSaveThemeModal();
           updateStatus('Theme saved ✓', 'success');
+          showToast(`Theme "${name}" saved`, 'success');
           
-          // Ask if they want to apply the new theme
-          if (confirm(`Theme "${name}" saved! Apply it now?`)) {
+          if (confirm(`Apply theme "${name}" to ${currentFileName}?`)) {
             await applyTheme(name);
           }
         } else {
           const data = await res.json();
           updateStatus('Save failed', 'error');
-          alert(data.error || 'Failed to save theme');
+          showToast(data.error || 'Failed to save theme', 'error');
         }
       } catch (err) {
         updateStatus('Save error', 'error');
+        showToast('Failed to save theme', 'error');
         console.error('Save theme error:', err);
       }
     }
 
-    // Event listeners
-    document.getElementById('btn-save').addEventListener('click', saveSlides);
-    document.getElementById('btn-export').addEventListener('click', exportPdf);
-    document.getElementById('btn-download').addEventListener('click', downloadMd);
-    document.getElementById('btn-themes').addEventListener('click', openThemesModal);
-    document.getElementById('btn-refresh').addEventListener('click', refreshPreview);
-    document.getElementById('btn-history').addEventListener('click', openHistoryModal);
-    document.getElementById('btn-files')?.addEventListener('click', openFilesModal);
+    // ==========================================
+    // EVENT LISTENERS
+    // ==========================================
+    function setupEventListeners() {
+      document.getElementById('btn-save').addEventListener('click', saveSlides);
+      document.getElementById('btn-export').addEventListener('click', exportPdf);
+      document.getElementById('btn-download').addEventListener('click', downloadMd);
+      document.getElementById('btn-themes').addEventListener('click', openThemesModal);
+      document.getElementById('btn-history').addEventListener('click', openHistoryModal);
+      document.getElementById('btn-files').addEventListener('click', openFilesModal);
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeHistoryModal();
-        closeFilesModal();
-      }
-    });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeHistoryModal();
+          closeFilesModal();
+          closeThemesModal();
+          closeSaveThemeModal();
+          closeThemeConfirmModal();
+        }
+      });
 
-    // Resizer
-    const resizer = document.getElementById('resizer');
-    const editorPanel = document.getElementById('editor-panel');
-    let isResizing = false;
+      window.addEventListener('beforeunload', (e) => {
+        if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+      });
+    }
 
-    resizer.addEventListener('mousedown', () => {
-      isResizing = true;
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      const container = document.querySelector('main');
-      const newWidth = ((e.clientX - container.getBoundingClientRect().left) / container.offsetWidth) * 100;
-      if (newWidth > 20 && newWidth < 80) editorPanel.style.width = newWidth + '%';
-    });
-
-    document.addEventListener('mouseup', () => {
-      isResizing = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    });
-
-    window.addEventListener('beforeunload', (e) => {
-      if (isDirty) { e.preventDefault(); e.returnValue = ''; }
-    });
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    initLandingPage();
   </script>
 </body>
 </html>
