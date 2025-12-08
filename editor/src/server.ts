@@ -288,7 +288,10 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(authMiddleware);
-app.use(express.static(path.join(__dirname, 'public')));
+// Static files - go up from src/ or dist/ to editor/public
+const publicPath = path.join(__dirname, '..', 'public');
+console.log('📂 Serving static files from:', publicPath);
+app.use(express.static(publicPath));
 
 // ==========================================
 // SIMPLE PROXY - Just pass through to Slidev

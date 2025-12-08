@@ -511,6 +511,8 @@
     let slidevUrl = '/slidev';
     let isDirty = false;
     let stylesIsDirty = false;
+    let isLoadingContent = false; // Flag to prevent false dirty state during load
+    let isLoadingStyles = false;  // Same for styles editor
     let maxHistory = 10;
     let hasDatabase = false;
     let currentFileName = 'slides.md';
@@ -801,6 +803,7 @@ Questions?
           
           // Event handlers
           stylesEditor.onDidChangeModelContent(() => {
+            if (isLoadingStyles) return;
             stylesIsDirty = true;
             updateStatus('Styles modified', 'warning');
           });
@@ -812,6 +815,8 @@ Questions?
           });
 
           editor.onDidChangeModelContent(() => {
+            // Don't mark as dirty if we're programmatically loading content
+            if (isLoadingContent) return;
             isDirty = true;
             document.getElementById('char-count').textContent = `${editor.getValue().length} characters`;
             updateStatus('Modified', 'warning');
@@ -894,17 +899,21 @@ Questions?
         const data = await res.json();
         
         if (res.ok && data.content !== undefined) {
+          // Prevent change event from marking as dirty during load
+          isLoadingContent = true;
           editor.setValue(data.content);
           currentFileName = data.name || name;
           document.getElementById('file-label').textContent = currentFileName;
           document.getElementById('current-file-name').textContent = currentFileName;
           isDirty = false;
+          isLoadingContent = false;
           document.getElementById('char-count').textContent = `${data.content.length} characters`;
           updateStatus('Ready', 'success');
         } else {
           updateStatus('Failed to load', 'error');
         }
       } catch (err) {
+        isLoadingContent = false;
         updateStatus('Connection error', 'error');
         console.error(err);
       }
@@ -1178,8 +1187,10 @@ Questions?
         const data = await res.json();
         
         if (data.success && data.content) {
+          isLoadingContent = true;
           editor.setValue(data.content);
           isDirty = false;
+          isLoadingContent = false;
           lastSavedTime = new Date();
           updateLastSavedInfo();
           updateStatus('Restored ✓', 'success');
@@ -1206,9 +1217,11 @@ Questions?
         
         if (themeRes.ok && themeData.content) {
           if (stylesEditor) {
+            isLoadingStyles = true;
             stylesEditor.setValue(themeData.content);
+            stylesIsDirty = false;
+            isLoadingStyles = false;
           }
-          stylesIsDirty = false;
           updateThemeUI();
         }
       } catch (err) {
@@ -1238,9 +1251,11 @@ Questions?
         if (res.ok && data.content) {
           currentThemeName = name;
           if (stylesEditor) {
+            isLoadingStyles = true;
             stylesEditor.setValue(data.content);
+            stylesIsDirty = false;
+            isLoadingStyles = false;
           }
-          stylesIsDirty = false;
           updateThemeUI();
         }
       } catch (err) {
