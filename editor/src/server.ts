@@ -29,20 +29,12 @@ const initDatabase = async () => {
   }
 
   try {
-    // Always use SSL for remote databases (Railway, Heroku, etc.)
-    // Only skip SSL for localhost connections
-    const isLocalhost = DATABASE_URL.includes('localhost') || DATABASE_URL.includes('127.0.0.1');
-    
+    // Use SSL only in production (Railway sets NODE_ENV=production)
+    // No connectionTimeoutMillis - let it use system default (was causing timeouts on Railway)
     db = new Pool({
       connectionString: DATABASE_URL,
-      ssl: isLocalhost ? false : { rejectUnauthorized: false },
-      connectionTimeoutMillis: 15000,  // 15 second timeout
-      idleTimeoutMillis: 30000,
-      max: 10
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     });
-    
-    console.log('🔄 Connecting to database...');
-    console.log(`   SSL: ${isLocalhost ? 'disabled (localhost)' : 'enabled'}`);
 
     // Create tables if they don't exist
     await db.query(`
