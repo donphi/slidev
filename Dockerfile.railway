@@ -143,9 +143,11 @@ cd /app/editor && exec npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Default environment variables
-# IMPORTANT: Point to userdata for editor, but presentation still runs from /app/presentation
+# SLIDES_PATH/STYLE_PATH = where user files are (on volume)
+# SLIDEV_DIR = where Sli.dev is installed (has package.json, node_modules)
 ENV SLIDES_PATH=/app/userdata/slides.md
 ENV STYLE_PATH=/app/userdata/style.css
+ENV SLIDEV_DIR=/app/presentation
 ENV SLIDEV_URL=http://localhost:3030
 ENV CHOKIDAR_USEPOLLING=true
 ENV NODE_NO_WARNINGS=1

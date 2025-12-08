@@ -9,6 +9,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SLIDES_PATH = process.env.SLIDES_PATH || '/app/presentation/slides.md';
 const PRESENTATION_DIR = path.dirname(SLIDES_PATH);
+// SLIDEV_DIR is where Sli.dev is installed (has package.json, node_modules)
+// This may differ from PRESENTATION_DIR on Railway where userdata is separate
+const SLIDEV_DIR = process.env.SLIDEV_DIR || PRESENTATION_DIR;
 const SLIDEV_URL = process.env.SLIDEV_URL || 'http://localhost:3030';
 const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
 const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10);
@@ -642,16 +645,17 @@ app.get('/api/themes/current', async (req: Request, res: Response) => {
 // ==========================================
 // PDF EXPORT
 // ==========================================
-const PDF_PATH = path.join(PRESENTATION_DIR, 'slides-export.pdf');
+// PDF is exported to SLIDEV_DIR (where Sli.dev runs from)
+const PDF_PATH = path.join(SLIDEV_DIR, 'slides-export.pdf');
 let exportInProgress = false;
 
 // Helper to find the exported PDF (Sli.dev may use different names)
 const findExportedPdf = (): string | null => {
-  // Check common export filenames
+  // Check common export filenames in SLIDEV_DIR
   const possibleNames = ['slides-export.pdf', 'export.pdf', 'slides.pdf'];
   
   for (const name of possibleNames) {
-    const pdfPath = path.join(PRESENTATION_DIR, name);
+    const pdfPath = path.join(SLIDEV_DIR, name);
     if (existsSync(pdfPath)) {
       return pdfPath;
     }
@@ -659,10 +663,10 @@ const findExportedPdf = (): string | null => {
   
   // Also check for any .pdf file in the directory
   try {
-    const files = readdirSync(PRESENTATION_DIR);
+    const files = readdirSync(SLIDEV_DIR);
     const pdfFile = files.find(f => f.endsWith('.pdf'));
     if (pdfFile) {
-      return path.join(PRESENTATION_DIR, pdfFile);
+      return path.join(SLIDEV_DIR, pdfFile);
     }
   } catch (e) {
     // Ignore
@@ -679,12 +683,12 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   
   exportInProgress = true;
   console.log('📄 Starting PDF export...');
-  console.log(`   Working directory: ${PRESENTATION_DIR}`);
+  console.log(`   Sli.dev directory: ${SLIDEV_DIR}`);
   console.log(`   Expected output: ${PDF_PATH}`);
   
   try {
-    // Run slidev export command using promise wrapper
-    const exportCmd = `cd ${PRESENTATION_DIR} && npm run export 2>&1`;
+    // Run slidev export command from SLIDEV_DIR (where npm packages are)
+    const exportCmd = `cd ${SLIDEV_DIR} && npm run export 2>&1`;
     
     const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
       exec(exportCmd, { timeout: 180000 }, (error, stdout, stderr) => {
@@ -707,10 +711,10 @@ app.post('/api/export', async (_req: Request, res: Response) => {
       res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
     } else {
       exportInProgress = false;
-      console.error('❌ No PDF file found in:', PRESENTATION_DIR);
+      console.error('❌ No PDF file found in:', SLIDEV_DIR);
       // List directory contents for debugging
       try {
-        const files = readdirSync(PRESENTATION_DIR);
+        const files = readdirSync(SLIDEV_DIR);
         console.error('   Directory contents:', files.join(', '));
       } catch (e) { /* ignore */ }
       res.status(500).json({ error: 'PDF file not created. Export may have completed but file is missing.' });
@@ -784,6 +788,7 @@ const start = async () => {
   console.log('📂 Path Configuration:');
   console.log(`   SLIDES_PATH: ${SLIDES_PATH}`);
   console.log(`   PRESENTATION_DIR: ${PRESENTATION_DIR}`);
+  console.log(`   SLIDEV_DIR: ${SLIDEV_DIR}`);
   console.log(`   STYLE_PATH: ${STYLE_PATH}`);
   console.log(`   style.css exists: ${existsSync(STYLE_PATH)}`);
   
