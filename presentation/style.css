@@ -17,7 +17,7 @@
    ║      3.2 Colors                                                              ║
    ║      3.3 Layout & Spacing                                                    ║
    ║      3.4 Headings (H1, H2, H3)                                               ║
-   ║      3.5 Spacing Elements (<br>, .spacer, <gap>)                             ║
+   ║      3.5 Spacing Elements (br, .spacer, gap)                                 ║
    ║      3.6 Tables                                                              ║
    ║      3.7 Lists                                                               ║
    ║      3.8 Confidential Label                                                  ║
@@ -25,7 +25,7 @@
    ║   4. BASE STYLES ...................... Core slide styling                   ║
    ║   5. HEADING STYLES ................... H1, H2, H3 implementation            ║
    ║   6. TEXT STYLES ...................... Paragraphs, bold, etc.               ║
-   ║   7. SPACING ELEMENTS ................. <br>, <gap>, .spacer, .pull-*        ║
+   ║   7. SPACING ELEMENTS ................. br, gap, .spacer, .pull-*           ║
    ║   8. TABLE STYLES ..................... Tables and condensed variants        ║
    ║   9. LIST STYLES ...................... Bullets and numbered lists           ║
    ║   10. UTILITY CLASSES ................. Layouts, density, font sizes         ║
@@ -49,36 +49,36 @@
    There are THREE ways to add vertical spacing in your slides.md file:
 
    ┌─────────────────────────────────────────────────────────────────────────────┐
-   │  METHOD 1: Line Break <br>                                                  │
+   │  METHOD 1: Line Break [br]                                                  │
    │  ─────────────────────────                                                  │
    │                                                                             │
-   │  Use <br> to add a small vertical gap. The height is controlled by          │
+   │  Use [br] to add a small vertical gap. The height is controlled by          │
    │  the --br-height variable (default: 4px).                                   │
    │                                                                             │
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
    │  │  # My Title                                                         │    │
-   │  │  <br>                                                               │    │
+   │  │  [br]                                                               │    │
    │  │  Some content after a small gap                                     │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    │                                                                             │
-   │  Stack multiple <br> tags for larger gaps:                                  │
+   │  Stack multiple [br] tags for larger gaps:                                  │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
-   │  │  <br><br><br>   ← Creates 3x the spacing                            │    │
+   │  │  [br][br][br]   ← Creates 3x the spacing                            │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    └─────────────────────────────────────────────────────────────────────────────┘
 
    ┌─────────────────────────────────────────────────────────────────────────────┐
-   │  METHOD 2: Spacer Div <div class="spacer"></div>                            │
+   │  METHOD 2: Spacer Div [div class="spacer"][/div]                            │
    │  ───────────────────────────────────────────────                            │
    │                                                                             │
-   │  Use the .spacer class for the same effect as <br>.                         │
-   │  This is useful when <br> doesn't work in certain contexts.                 │
+   │  Use the .spacer class for the same effect as [br].                         │
+   │  This is useful when [br] doesn't work in certain contexts.                 │
    │                                                                             │
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
    │  │  # My Title                                                         │    │
-   │  │  <div class="spacer"></div>                                         │    │
+   │  │  [div class="spacer"][/div]                                         │    │
    │  │  Content after spacing                                              │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    └─────────────────────────────────────────────────────────────────────────────┘
@@ -91,9 +91,9 @@
    │                                                                             │
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
-   │  │  <div style="height: 20px"></div>   ← Exactly 20 pixels             │    │
-   │  │  <div style="height: 2rem"></div>   ← 2x the base font size         │    │
-   │  │  <div style="height: 5vh"></div>    ← 5% of viewport height         │    │
+   │  │  [div style="height: 20px"][/div]   ← Exactly 20 pixels             │    │
+   │  │  [div style="height: 2rem"][/div]   ← 2x the base font size         │    │
+   │  │  [div style="height: 5vh"][/div]    ← 5% of viewport height         │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -105,22 +105,22 @@
    REDUCE spacing and pull content closer together:
 
    ┌─────────────────────────────────────────────────────────────────────────────┐
-   │  METHOD 1: The <gap> Element                                                │
+   │  METHOD 1: The [gap] Element                                                │
    │  ─────────────────────────────                                              │
    │                                                                             │
-   │  Use <gap></gap> to PULL the next element UP (reduce space).                │
+   │  Use [gap][/gap] to PULL the next element UP (reduce space).                │
    │  The default pull is controlled by --gap-height variable (default: -8px).   │
    │                                                                             │
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
    │  │  # My Title                                                         │    │
-   │  │  <gap></gap>                                                        │    │
+   │  │  [gap][/gap]                                                        │    │
    │  │  ## Subtitle now closer to title                                    │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    │                                                                             │
    │  Stack multiple for stronger effect:                                        │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
-   │  │  <gap></gap><gap></gap>   ← Pulls up 2x as much                     │    │
+   │  │  [gap][/gap][gap][/gap]   ← Pulls up 2x as much                     │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -133,10 +133,10 @@
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
    │  │  # My Title                                                         │    │
-   │  │  <div class="pull-sm">                                              │    │
+   │  │  [div class="pull-sm"]                                              │    │
    │  │                                                                     │    │
    │  │  ## This subtitle is pulled up slightly                             │    │
-   │  │  </div>                                                             │    │
+   │  │  [/div]                                                             │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    │                                                                             │
    │  Available pull classes:                                                    │
@@ -159,9 +159,9 @@
    │                                                                             │
    │  Example in slides.md:                                                      │
    │  ┌─────────────────────────────────────────────────────────────────────┐    │
-   │  │  <div style="margin-top: -10px">                                    │    │
+   │  │  [div style="margin-top: -10px"]                                    │    │
    │  │  This content is pulled up exactly 10 pixels                        │    │
-   │  │  </div>                                                             │    │
+   │  │  [/div]                                                             │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
    └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -169,7 +169,7 @@
    ADDING CUSTOM CSS TO INDIVIDUAL SLIDES
    ═══════════════════════════════════════════════════════════════════════════════
 
-   You can add CSS that only applies to ONE slide using <style scoped>:
+   You can add CSS that only applies to ONE slide using [style scoped]:
 
    ┌─────────────────────────────────────────────────────────────────────────────┐
    │  Example in slides.md:                                                      │
@@ -177,10 +177,10 @@
    │  │  ---                                                                │    │
    │  │  # My Special Slide                                                 │    │
    │  │                                                                     │    │
-   │  │  <style scoped>                                                     │    │
+   │  │  [style scoped]                                                     │    │
    │  │  h1 { color: red; }           /* Only THIS slide's H1 is red */     │    │
    │  │  p { font-size: 2rem; }       /* Only THIS slide's text is big */   │    │
-   │  │  </style>                                                           │    │
+   │  │  [/style]                                                           │    │
    │  │                                                                     │    │
    │  │  This text will be large, only on this slide.                       │    │
    │  └─────────────────────────────────────────────────────────────────────┘    │
@@ -410,21 +410,21 @@
      
      ┌─────────────────────────────────────────────────────────────────────┐
      │  TO ADD SPACE:                                                      │
-     │  <br>                              → Add small gap                  │
-     │  <div class="spacer"></div>        → Same as <br>                   │
-     │  <div style="height: 20px"></div>  → Custom height                  │
+     │  [br]                              → Add small gap                  │
+     │  [div class="spacer"][/div]        → Same as [br]                   │
+     │  [div style="height: 20px"][/div]  → Custom height                  │
      ├─────────────────────────────────────────────────────────────────────┤
      │  TO REDUCE SPACE:                                                   │
-     │  <gap></gap>                       → Pull content up                │
-     │  <div class="pull-sm">...</div>    → Pull up with class             │
+     │  [gap][/gap]                       → Pull content up                │
+     │  [div class="pull-sm"]...[/div]    → Pull up with class             │
      └─────────────────────────────────────────────────────────────────────┘
      
      ══════════════════════════════════════════════════════════════════════════ */
 
-  /* Height of each <br> tag and .spacer element (POSITIVE = adds space) */
+  /* Height of each [br] tag and .spacer element (POSITIVE = adds space) */
   --br-height: 4px;
 
-  /* Height of each <gap> element (NEGATIVE = reduces space, pulls up) */
+  /* Height of each [gap] element (NEGATIVE = reduces space, pulls up) */
   --gap-height: -8px;
 
 
@@ -624,55 +624,55 @@
    │   TO ADD SPACE (push content apart):                                         │
    │   ═══════════════════════════════════════════════════════════════════════    │
    │                                                                              │
-   │   <br>                              → Small gap (default 4px)                │
-   │   <br><br><br>                      → Stack for larger gaps                  │
-   │   <div class="spacer"></div>        → Same as <br>                           │
-   │   <div style="height: 20px"></div>  → Custom exact height                    │
+   │   [br]                              → Small gap (default 4px)                │
+   │   [br][br][br]                      → Stack for larger gaps                  │
+   │   [div class="spacer"][/div]        → Same as [br]                           │
+   │   [div style="height: 20px"][/div]  → Custom exact height                    │
    │                                                                              │
    │   ═══════════════════════════════════════════════════════════════════════    │
    │   TO REDUCE SPACE (pull content closer):                                     │
    │   ═══════════════════════════════════════════════════════════════════════    │
    │                                                                              │
-   │   <gap></gap>                       → Pull up (default -8px)                 │
-   │   <gap></gap><gap></gap>            → Stack for stronger pull                │
-   │   <div class="pull-sm">...</div>    → Wrap content, pull up 8px              │
-   │   <div class="pull-md">...</div>    → Wrap content, pull up 16px             │
-   │   <div class="pull-lg">...</div>    → Wrap content, pull up 24px             │
+   │   [gap][/gap]                       → Pull up (default -8px)                 │
+   │   [gap][/gap][gap][/gap]            → Stack for stronger pull                │
+   │   [div class="pull-sm"]...[/div]    → Wrap content, pull up 8px              │
+   │   [div class="pull-md"]...[/div]    → Wrap content, pull up 16px             │
+   │   [div class="pull-lg"]...[/div]    → Wrap content, pull up 24px             │
    │                                                                              │
    └──────────────────────────────────────────────────────────────────────────────┘ */
 
 /* ─────────────────────────────────────────────────────────
-   ADDING Space: <br> and .spacer
+   ADDING Space: [br] and .spacer
    ───────────────────────────────────────────────────────── */
 
-/* Transform <br> from inline to block element with configurable height */
+/* Transform [br] from inline to block element with configurable height */
 .slidev-layout br {
   display: block;
   content: "";
   line-height: var(--br-height);
 }
 
-/* Alternative spacer using a div - same height as <br> */
+/* Alternative spacer using a div - same height as [br] */
 .slidev-layout .spacer {
   height: var(--br-height);
 }
 
 /* ─────────────────────────────────────────────────────────
-   REDUCING Space: <gap> and .pull-* classes
+   REDUCING Space: [gap] and .pull-* classes
    
    Use these to PULL content CLOSER together by applying
    negative margins.
    ───────────────────────────────────────────────────────── */
 
-/* The <gap> element - reduces space between elements
-   Usage: <gap></gap> or stack multiple <gap></gap><gap></gap> */
+/* The [gap] element - reduces space between elements
+   Usage: [gap][/gap] or stack multiple [gap][/gap][gap][/gap] */
 .slidev-layout gap {
   display: block;
   margin-bottom: var(--gap-height);
 }
 
 /* Pull-up utility classes - wrap content to pull it up
-   Usage: <div class="pull-sm">Content pulled up</div> */
+   Usage: [div class="pull-sm"]Content pulled up[/div] */
 .slidev-layout .pull-xs { margin-top: -4px !important; }
 .slidev-layout .pull-sm { margin-top: -8px !important; }
 .slidev-layout .pull-md { margin-top: -16px !important; }
@@ -748,13 +748,13 @@
    
    USAGE: Wrap your table in a div with the class:
    
-   <div class="table-xs">
+   [div class="table-xs"]
    
    | Column 1 | Column 2 |
    |----------|----------|
    | Data     | Data     |
    
-   </div>
+   [/div]
    ───────────────────────────────────────────────────────── */
 
 /* Extra Small - Very tight spacing for maximum data density */
@@ -810,7 +810,7 @@
    │   ---                                                                        │
    │                                                                              │
    │   USAGE ON ELEMENTS:                                                         │
-   │   <div class="layout-center">Centered content</div>                          │
+   │   [div class="layout-center"]Centered content[/div]                          │
    │                                                                              │
    └──────────────────────────────────────────────────────────────────────────────┘ */
 
