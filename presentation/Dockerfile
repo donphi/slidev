@@ -1,5 +1,8 @@
 FROM node:lts
 
+# Update npm to specific version for reproducible builds
+RUN npm install -g npm@11.6.4
+
 WORKDIR /app
 
 # Install dependencies first for caching

@@ -2,6 +2,8 @@
 dockerfilePath = "Dockerfile.railway"
 
 [deploy]
+# Expose the editor on port 3000 (not Sli.dev on 3030)
+port = 3000
 healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"

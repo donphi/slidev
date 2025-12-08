@@ -1,5 +1,8 @@
 FROM node:20-slim
 
+# Update npm to specific version for reproducible builds
+RUN npm install -g npm@11.6.4
+
 WORKDIR /editor
 
 # Install dependencies first (for better caching)

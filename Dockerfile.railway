@@ -3,6 +3,9 @@
 
 FROM node:20
 
+# Update npm to specific version for reproducible builds
+RUN npm install -g npm@11.6.4
+
 WORKDIR /app
 
 # Install process manager for running multiple services
@@ -51,8 +54,8 @@ cd /app/presentation && npm run dev &\n\
 cd /app/editor && npm start &\n\
 wait' > /app/start.sh && chmod +x /app/start.sh
 
-# Expose both ports
-EXPOSE 3000 3030
+# Only expose editor port (Sli.dev runs internally for iframe preview)
+EXPOSE 3000
 
 # Environment variables
 ENV PORT=3000
