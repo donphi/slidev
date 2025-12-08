@@ -166,8 +166,8 @@
         </div>
       </div>
 
-      <!-- Resizer 1 -->
-      <div class="w-1 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
+      <!-- Resizer between MD and CSS (draggable) -->
+      <div id="resizer-md-css" class="w-1.5 bg-slate-700 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
 
       <!-- Panel 2: Styles Editor (35%) -->
       <div id="styles-panel" class="flex flex-col bg-slate-950" style="width: 35%;">
@@ -427,7 +427,57 @@
       });
 
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
+      
+      // Setup resizer between MD and CSS panels
+      setupResizer();
     });
+    
+    // Draggable resizer between MD and CSS panels
+    function setupResizer() {
+      const resizer = document.getElementById('resizer-md-css');
+      const mdPanel = document.getElementById('md-panel');
+      const stylesPanel = document.getElementById('styles-panel');
+      
+      if (!resizer || !mdPanel || !stylesPanel) return;
+      
+      let isResizing = false;
+      
+      resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        
+        const container = mdPanel.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const mouseX = e.clientX - containerRect.left;
+        
+        // Calculate percentages (leave 20% for preview panel)
+        const totalEditorWidth = containerWidth * 0.8; // 80% for both editors
+        const mdPercent = Math.max(20, Math.min(60, (mouseX / containerWidth) * 100));
+        const cssPercent = 80 - mdPercent; // Remaining of the 80%
+        
+        mdPanel.style.width = mdPercent + '%';
+        stylesPanel.style.width = cssPercent + '%';
+        
+        // Trigger Monaco layout update
+        if (editor) editor.layout();
+        if (stylesEditor) stylesEditor.layout();
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+    }
 
     // Load slides
     async function loadSlides(name = currentFileName) {
