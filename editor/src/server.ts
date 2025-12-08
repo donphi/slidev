@@ -3,6 +3,7 @@ import cors from 'cors';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
+import { exec } from 'child_process';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -432,6 +433,73 @@ app.post('/api/history/restore/:id', async (req: Request, res: Response) => {
     console.error('Restore error:', err);
     res.status(500).json({ error: 'Failed to restore' });
   }
+});
+
+// ==========================================
+// PDF EXPORT
+// ==========================================
+const PRESENTATION_DIR = path.dirname(SLIDES_PATH);
+const PDF_PATH = path.join(PRESENTATION_DIR, 'slides-export.pdf');
+let exportInProgress = false;
+
+// API: Export to PDF
+app.post('/api/export', async (_req: Request, res: Response) => {
+  if (exportInProgress) {
+    return res.status(409).json({ error: 'Export already in progress' });
+  }
+  
+  exportInProgress = true;
+  console.log('Starting PDF export...');
+  
+  try {
+    // Run slidev export command
+    const exportCmd = `cd ${PRESENTATION_DIR} && npm run export`;
+    
+    exec(exportCmd, { timeout: 120000 }, (error, stdout, stderr) => {
+      exportInProgress = false;
+      
+      if (error) {
+        console.error('Export error:', error);
+        console.error('stderr:', stderr);
+        return res.status(500).json({ error: 'Export failed', details: stderr });
+      }
+      
+      console.log('Export completed:', stdout);
+      
+      // Check if PDF was created
+      if (existsSync(PDF_PATH)) {
+        res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
+      } else {
+        res.status(500).json({ error: 'PDF file not created' });
+      }
+    });
+  } catch (err) {
+    exportInProgress = false;
+    console.error('Export error:', err);
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// API: Download exported PDF
+app.get('/api/export/download', (_req: Request, res: Response) => {
+  if (!existsSync(PDF_PATH)) {
+    return res.status(404).json({ error: 'No PDF available. Run export first.' });
+  }
+  
+  res.download(PDF_PATH, 'slides.pdf', (err) => {
+    if (err) {
+      console.error('Download error:', err);
+    }
+  });
+});
+
+// API: Check export status
+app.get('/api/export/status', (_req: Request, res: Response) => {
+  res.json({
+    inProgress: exportInProgress,
+    pdfAvailable: existsSync(PDF_PATH),
+    pdfPath: PDF_PATH
+  });
 });
 
 // Health check

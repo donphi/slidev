@@ -332,8 +332,34 @@
       document.getElementById('preview-frame').src = slidevUrl;
     }
 
-    function exportPdf() {
-      window.open(slidevUrl + '?print', '_blank');
+    async function exportPdf() {
+      // First, make sure we save any changes
+      if (isDirty) {
+        await saveSlides();
+      }
+      
+      updateStatus('Exporting PDF...', 'loading');
+      
+      try {
+        const res = await fetch('/api/export', { method: 'POST' });
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          updateStatus('PDF ready!', 'success');
+          // Auto-download the PDF
+          window.location.href = '/api/export/download';
+        } else if (res.status === 409) {
+          updateStatus('Export in progress...', 'warning');
+          alert('An export is already in progress. Please wait.');
+        } else {
+          updateStatus('Export failed', 'error');
+          alert(data.error || 'Failed to export PDF');
+        }
+      } catch (err) {
+        updateStatus('Export error', 'error');
+        console.error('Export error:', err);
+        alert('Failed to export PDF. Check console for details.');
+      }
     }
 
     function downloadMd() {
