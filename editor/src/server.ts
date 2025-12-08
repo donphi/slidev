@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import path from 'path';
 
 const app = express();
@@ -8,6 +8,79 @@ const PORT = process.env.PORT || 3000;
 const SLIDES_PATH = process.env.SLIDES_PATH || '/app/presentation/slides.md';
 const SLIDEV_URL = process.env.SLIDEV_URL || 'http://localhost:3030';
 const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD || '';
+const MAX_HISTORY = parseInt(process.env.MAX_HISTORY || '10', 10); // Keep last 10 versions
+
+// History directory (next to slides.md)
+const HISTORY_DIR = path.join(path.dirname(SLIDES_PATH), '.history');
+
+// Ensure history directory exists
+const ensureHistoryDir = () => {
+  if (!existsSync(HISTORY_DIR)) {
+    mkdirSync(HISTORY_DIR, { recursive: true });
+  }
+};
+
+// Create a backup before saving
+const createBackup = () => {
+  ensureHistoryDir();
+  
+  if (!existsSync(SLIDES_PATH)) {
+    return; // Nothing to backup
+  }
+
+  const content = readFileSync(SLIDES_PATH, 'utf-8');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupPath = path.join(HISTORY_DIR, `slides-${timestamp}.md`);
+  
+  writeFileSync(backupPath, content, 'utf-8');
+  console.log(`Backup created: ${backupPath}`);
+  
+  // Clean up old backups (keep only MAX_HISTORY)
+  cleanupOldBackups();
+};
+
+// Remove old backups beyond MAX_HISTORY
+const cleanupOldBackups = () => {
+  const files = readdirSync(HISTORY_DIR)
+    .filter(f => f.startsWith('slides-') && f.endsWith('.md'))
+    .sort()
+    .reverse(); // Newest first
+  
+  // Delete files beyond MAX_HISTORY
+  files.slice(MAX_HISTORY).forEach(file => {
+    const filePath = path.join(HISTORY_DIR, file);
+    unlinkSync(filePath);
+    console.log(`Deleted old backup: ${file}`);
+  });
+};
+
+// Get list of backups with metadata
+const getBackupList = () => {
+  ensureHistoryDir();
+  
+  const files = readdirSync(HISTORY_DIR)
+    .filter(f => f.startsWith('slides-') && f.endsWith('.md'))
+    .sort()
+    .reverse(); // Newest first
+  
+  return files.map((file, index) => {
+    // Extract timestamp from filename: slides-2024-12-08T10-30-45-123Z.md
+    const match = file.match(/slides-(.+)\.md/);
+    const timestamp = match ? match[1].replace(/-/g, (m, offset) => {
+      // Restore colons and dots in timestamp
+      if (offset === 13 || offset === 16) return ':';
+      if (offset === 19) return '.';
+      return m;
+    }) : file;
+    
+    return {
+      id: index,
+      filename: file,
+      timestamp: timestamp,
+      label: index === 0 ? 'Latest backup' : `${index + 1} saves ago`
+    };
+  });
+};
 
 // Simple password authentication middleware
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -53,7 +126,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/api/config', (_req: Request, res: Response) => {
   res.json({ 
     slidevUrl: SLIDEV_URL,
-    appName: 'Sli.dev Editor'
+    appName: 'Sli.dev Editor',
+    maxHistory: MAX_HISTORY
   });
 });
 
@@ -72,19 +146,84 @@ app.get('/api/slides', (_req: Request, res: Response) => {
   }
 });
 
-// API: Save slides content
+// API: Save slides content (with automatic backup)
 app.post('/api/slides', (req: Request, res: Response) => {
   try {
     const { content } = req.body;
     if (typeof content !== 'string') {
       return res.status(400).json({ error: 'Content must be a string' });
     }
+    
+    // Create backup before saving
+    createBackup();
+    
+    // Save new content
     writeFileSync(SLIDES_PATH, content, 'utf-8');
     console.log(`Slides saved to: ${SLIDES_PATH}`);
     res.json({ success: true, message: 'Saved! Sli.dev will auto-reload.' });
   } catch (err) {
     console.error('Failed to save slides:', err);
     res.status(500).json({ error: 'Failed to save slides' });
+  }
+});
+
+// API: Get backup history list
+app.get('/api/history', (_req: Request, res: Response) => {
+  try {
+    const backups = getBackupList();
+    res.json({ backups, maxHistory: MAX_HISTORY });
+  } catch (err) {
+    console.error('Failed to get history:', err);
+    res.status(500).json({ error: 'Failed to get history' });
+  }
+});
+
+// API: Get specific backup content
+app.get('/api/history/:id', (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const backups = getBackupList();
+    
+    if (id < 0 || id >= backups.length) {
+      return res.status(404).json({ error: 'Backup not found' });
+    }
+    
+    const backup = backups[id];
+    const filePath = path.join(HISTORY_DIR, backup.filename);
+    const content = readFileSync(filePath, 'utf-8');
+    
+    res.json({ content, backup });
+  } catch (err) {
+    console.error('Failed to get backup:', err);
+    res.status(500).json({ error: 'Failed to get backup' });
+  }
+});
+
+// API: Restore from backup
+app.post('/api/history/restore/:id', (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const backups = getBackupList();
+    
+    if (id < 0 || id >= backups.length) {
+      return res.status(404).json({ error: 'Backup not found' });
+    }
+    
+    // Create backup of current state before restoring
+    createBackup();
+    
+    const backup = backups[id];
+    const filePath = path.join(HISTORY_DIR, backup.filename);
+    const content = readFileSync(filePath, 'utf-8');
+    
+    // Restore
+    writeFileSync(SLIDES_PATH, content, 'utf-8');
+    console.log(`Restored from backup: ${backup.filename}`);
+    
+    res.json({ success: true, message: `Restored from: ${backup.label}`, content });
+  } catch (err) {
+    console.error('Failed to restore:', err);
+    res.status(500).json({ error: 'Failed to restore from backup' });
   }
 });
 
@@ -106,8 +245,8 @@ app.listen(PORT, () => {
 ║  Editor:    http://localhost:${PORT}              ║
 ║  Sli.dev:   ${SLIDEV_URL}                         ║
 ║  Slides:    ${SLIDES_PATH}                        ║
+║  History:   ${MAX_HISTORY} backups                ║
 ║  Auth:      ${EDITOR_PASSWORD ? '🔒 Password protected' : '🔓 Open (no password set)'}
 ╚═══════════════════════════════════════════════════╝
   `);
 });
-

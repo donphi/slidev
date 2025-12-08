@@ -27,6 +27,8 @@ services:
       - SLIDEV_URL=http://localhost:3030
       # Set a password to protect the editor (leave empty for no auth)
       - EDITOR_PASSWORD=${EDITOR_PASSWORD:-}
+      # Number of backup versions to keep (default: 10)
+      - MAX_HISTORY=${MAX_HISTORY:-10}
     depends_on:
       - slidev
     restart: unless-stopped

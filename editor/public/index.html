@@ -50,6 +50,12 @@
     /* Loading spinner */
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
+    
+    /* Modal backdrop */
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
@@ -66,6 +72,14 @@
       </div>
       
       <div class="flex items-center gap-2">
+        <!-- History/Undo Button -->
+        <button id="btn-history" class="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth" title="Version History">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span class="hidden sm:inline">History</span>
+        </button>
+        
         <!-- Save Button -->
         <button id="btn-save" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-smooth">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,6 +163,43 @@
     </footer>
   </div>
 
+  <!-- History Modal -->
+  <div id="history-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeHistoryModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-900 rounded-xl shadow-2xl border border-slate-700">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <h2 class="text-lg font-semibold text-white">Version History</h2>
+        </div>
+        <button onclick="closeHistoryModal()" class="p-1 text-slate-400 hover:text-white rounded transition-smooth">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="px-6 py-4">
+        <p class="text-sm text-slate-400 mb-4">Each save creates a backup. Click to preview, then restore if needed.</p>
+        <div id="history-list" class="space-y-2 max-h-64 overflow-y-auto">
+          <p class="text-slate-500 text-center py-4">Loading...</p>
+        </div>
+      </div>
+      
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between px-6 py-4 border-t border-slate-700 bg-slate-800/50 rounded-b-xl">
+        <span id="history-info" class="text-xs text-slate-500">Keeps last 10 versions</span>
+        <button onclick="closeHistoryModal()" class="px-4 py-2 text-sm text-slate-300 hover:text-white transition-smooth">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Monaco Editor Loader -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script>
@@ -156,6 +207,7 @@
     let editor;
     let slidevUrl = 'http://localhost:3030';
     let isDirty = false;
+    let maxHistory = 10;
 
     // Initialize Monaco Editor
     require.config({ 
@@ -167,6 +219,7 @@
       try {
         const config = await fetch('/api/config').then(r => r.json());
         slidevUrl = config.slidevUrl;
+        maxHistory = config.maxHistory || 10;
       } catch (e) {
         console.warn('Could not fetch config, using defaults');
       }
@@ -215,6 +268,9 @@
 
       // Keyboard shortcut: Ctrl/Cmd + S
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
+      
+      // Keyboard shortcut: Ctrl/Cmd + Z for undo (Monaco handles this, but we add history shortcut)
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyH, openHistoryModal);
     });
 
     // Load slides from API
@@ -319,11 +375,140 @@
       }
     }
 
+    // ==========================================
+    // HISTORY FUNCTIONS
+    // ==========================================
+    
+    async function openHistoryModal() {
+      document.getElementById('history-modal').classList.remove('hidden');
+      document.getElementById('history-info').textContent = `Keeps last ${maxHistory} versions`;
+      await loadHistory();
+    }
+    
+    function closeHistoryModal() {
+      document.getElementById('history-modal').classList.add('hidden');
+    }
+    
+    async function loadHistory() {
+      const listEl = document.getElementById('history-list');
+      listEl.innerHTML = '<p class="text-slate-500 text-center py-4">Loading...</p>';
+      
+      try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+        
+        if (!data.backups || data.backups.length === 0) {
+          listEl.innerHTML = `
+            <div class="text-center py-8">
+              <svg class="w-12 h-12 mx-auto text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p class="text-slate-400">No backups yet</p>
+              <p class="text-slate-500 text-sm mt-1">Backups are created each time you save</p>
+            </div>
+          `;
+          return;
+        }
+        
+        listEl.innerHTML = data.backups.map((backup, index) => `
+          <div class="flex items-center justify-between p-3 bg-slate-800 hover:bg-slate-700 rounded-lg transition-smooth group">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 flex items-center justify-center bg-slate-700 rounded-full text-sm font-medium text-slate-300">
+                ${index + 1}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-white">${backup.label}</p>
+                <p class="text-xs text-slate-500">${formatTimestamp(backup.timestamp)}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
+              <button onclick="previewBackup(${backup.id})" class="px-3 py-1.5 text-xs bg-slate-600 hover:bg-slate-500 text-white rounded transition-smooth">
+                Preview
+              </button>
+              <button onclick="restoreBackup(${backup.id})" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-smooth">
+                Restore
+              </button>
+            </div>
+          </div>
+        `).join('');
+        
+      } catch (err) {
+        listEl.innerHTML = '<p class="text-red-400 text-center py-4">Failed to load history</p>';
+        console.error('History error:', err);
+      }
+    }
+    
+    function formatTimestamp(ts) {
+      try {
+        const date = new Date(ts);
+        return date.toLocaleString();
+      } catch {
+        return ts;
+      }
+    }
+    
+    async function previewBackup(id) {
+      try {
+        const res = await fetch(`/api/history/${id}`);
+        const data = await res.json();
+        
+        if (data.content) {
+          // Show in editor (but don't save)
+          editor.setValue(data.content);
+          isDirty = true;
+          updateStatus(`Previewing: ${data.backup.label}`, 'warning');
+          closeHistoryModal();
+        }
+      } catch (err) {
+        console.error('Preview error:', err);
+        alert('Failed to load backup');
+      }
+    }
+    
+    async function restoreBackup(id) {
+      if (!confirm('Restore this version? Your current work will be backed up first.')) {
+        return;
+      }
+      
+      try {
+        updateStatus('Restoring...', 'loading');
+        
+        const res = await fetch(`/api/history/restore/${id}`, {
+          method: 'POST'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success && data.content) {
+          editor.setValue(data.content);
+          isDirty = false;
+          updateStatus('Restored ✓', 'success');
+          closeHistoryModal();
+          
+          // Refresh preview
+          setTimeout(refreshPreview, 300);
+        } else {
+          updateStatus('Restore failed', 'error');
+        }
+      } catch (err) {
+        updateStatus('Restore error', 'error');
+        console.error('Restore error:', err);
+      }
+    }
+
     // Button event listeners
     document.getElementById('btn-save').addEventListener('click', saveSlides);
     document.getElementById('btn-export').addEventListener('click', exportPdf);
     document.getElementById('btn-download').addEventListener('click', downloadMd);
     document.getElementById('btn-refresh').addEventListener('click', refreshPreview);
+    document.getElementById('btn-history').addEventListener('click', openHistoryModal);
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeHistoryModal();
+      }
+    });
 
     // Resizable panels
     const resizer = document.getElementById('resizer');
@@ -364,4 +549,3 @@
   </script>
 </body>
 </html>
-

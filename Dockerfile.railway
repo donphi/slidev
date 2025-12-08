@@ -48,26 +48,30 @@ COPY editor/public ./dist/public
 # ==========================================
 WORKDIR /app
 
-# Create startup script
+# Create startup script that respects Railway's PORT variable
+# Sli.dev runs on internal port 3030 (not exposed)
+# Editor runs on $PORT (Railway assigns this, defaults to 3000)
 RUN echo '#!/bin/bash\n\
+echo "Starting Sli.dev on internal port 3030..."\n\
 cd /app/presentation && npm run dev &\n\
-cd /app/editor && npm start &\n\
-wait' > /app/start.sh && chmod +x /app/start.sh
+sleep 3\n\
+echo "Starting Editor on port ${PORT:-3000}..."\n\
+cd /app/editor && npm start\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
-# Only expose editor port (Sli.dev runs internally for iframe preview)
-EXPOSE 3000
+# Railway will assign the port dynamically - don't hardcode EXPOSE
+# The editor reads PORT from environment
 
-# Environment variables
-ENV PORT=3000
+# Default environment variables (Railway overrides PORT)
 ENV SLIDES_PATH=/app/presentation/slides.md
 ENV SLIDEV_URL=http://localhost:3030
 ENV CHOKIDAR_USEPOLLING=true
-# EDITOR_PASSWORD should be set in Railway dashboard (not hardcoded here)
+# EDITOR_PASSWORD and MAX_HISTORY should be set in Railway dashboard
 
-# Health check on editor port
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+# Health check uses the PORT environment variable
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-# Start both services
+# Start both services (editor in foreground to keep container alive)
 CMD ["/app/start.sh"]
 
