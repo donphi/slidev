@@ -7,35 +7,61 @@ A web-based presentation editor built on [Sli.dev](https://sli.dev/). Edit Markd
 ## Features
 
 - 📝 **Monaco Editor** - Same editor as VS Code, with syntax highlighting and autocomplete
-- 🔄 **Live Preview** - Changes hot-reload instantly in the preview pane
-- 📄 **PDF Export** - Export your presentation to PDF
-- 💾 **Auto-save warning** - Warns before leaving with unsaved changes
+- 🔄 **Live Preview** - Changes hot-reload instantly in the preview pane (via proxy)
+- 📄 **PDF Export** - Export your presentation to PDF using Playwright
+- 🎨 **Theme Editor** - Create and manage custom CSS themes
+- 💾 **Version History** - Auto-backup on every save with restore capability
+- 🗄️ **PostgreSQL Support** - Optional database for persistent storage and multiple presentations
 - ⌨️ **Keyboard shortcuts** - Ctrl/Cmd+S to save
+
+## Architecture
+
+This project runs **both Editor and Slidev in a single container** for Railway deployment:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Single Container                         │
+│                                                             │
+│  ┌─────────────────────┐    ┌─────────────────────────────┐ │
+│  │   Editor (Express)  │───▶│  Slidev (Vite dev server)   │ │
+│  │   Port: $PORT       │    │  Port: 3030 (internal)      │ │
+│  │                     │    │  Base: /slidev/             │ │
+│  │  - API endpoints    │    │                             │ │
+│  │  - Static frontend  │    │  - Hot-reload               │ │
+│  │  - Proxy /slidev/*  │    │  - Live presentation        │ │
+│  └─────────────────────┘    └─────────────────────────────┘ │
+│           │                                                 │
+│           ▼                                                 │
+│  ┌─────────────────────┐                                    │
+│  │  /app/userdata/     │  ← Railway Volume (persistent)     │
+│  │  - slides.md        │                                    │
+│  │  - style.css        │                                    │
+│  └─────────────────────┘                                    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Project Structure
 
 ```
 slidev/
 ├── presentation/          # Sli.dev presentation engine
-│   ├── Dockerfile
-│   ├── package.json
+│   ├── package.json       # Slidev dependencies
 │   ├── slides.md          # Your presentation content
+│   ├── style.css          # Global styles
 │   ├── components/        # Custom Vue components
 │   ├── layouts/           # Slide layouts
-│   ├── styles/            # CSS styles
+│   ├── styles/            # Additional CSS styles
 │   └── public/            # Static assets (images)
 │
 ├── editor/                # Editor service (Express + TypeScript)
-│   ├── Dockerfile
+│   ├── Dockerfile         # Local editor-only development
 │   ├── package.json
-│   ├── src/               # TypeScript backend
-│   │   └── server.ts
-│   └── public/            # Frontend (Tailwind + Monaco)
-│       └── index.html
+│   ├── src/server.ts      # Backend with proxy to Slidev
+│   └── public/index.html  # Frontend (Tailwind + Monaco)
 │
-├── docker-compose.yml     # Local development
-├── Dockerfile.railway     # Railway deployment (combined)
-└── railway.toml           # Railway config
+├── docker-compose.yml     # Local development (uses Dockerfile.railway)
+├── Dockerfile.railway     # Combined deployment (Editor + Slidev)
+└── railway.toml           # Railway configuration
 ```
 
 ## Quick Start (Local Development)
@@ -47,11 +73,11 @@ slidev/
 ### Run Locally
 
 ```bash
-# Start both services
+# Start the combined container
 docker-compose up --build
 
 # Editor available at: http://localhost:3000
-# Sli.dev direct:      http://localhost:3030
+# Preview accessible via: http://localhost:3000/slidev/
 ```
 
 Open http://localhost:3000 to use the editor.
@@ -70,16 +96,21 @@ Open http://localhost:3000 to use the editor.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `3000` | Editor server port |
-| `SLIDES_PATH` | `/app/presentation/slides.md` | Path to slides file |
-| `SLIDEV_URL` | `http://localhost:3030` | Internal Sli.dev URL |
+| `PORT` | `3000` | Editor server port (Railway sets this) |
+| `DATABASE_URL` | - | PostgreSQL connection string (optional) |
+| `EDITOR_PASSWORD` | - | Password protection (optional) |
+| `MAX_HISTORY` | `10` | Number of backups to keep |
 
-### Exposed Ports
+### Volume Mount (Railway)
 
-Railway exposes one port. The editor (port 3000) is the main entry point.  
-The Sli.dev preview runs internally and is embedded via iframe.
+Mount a volume to `/app/userdata` to persist your slides and styles between deployments.
 
-**Note**: For Railway, you may need to configure the `SLIDEV_URL` to use the internal service URL.
+### How It Works
+
+1. **Single Port**: Railway only exposes the Editor's port (`$PORT`)
+2. **Proxy**: The Editor proxies `/slidev/*` requests to the internal Slidev server
+3. **Base Path**: Slidev runs with `--base /slidev/` so all assets load correctly through the proxy
+4. **Hot Reload**: WebSocket connections are proxied for live updates
 
 ## Usage
 
@@ -98,8 +129,7 @@ The Sli.dev preview runs internally and is embedded via iframe.
 
 ### Export to PDF
 
-Click the **Export PDF** button to open the print view.  
-Use your browser's print dialog (Ctrl/Cmd + P) to save as PDF.
+Click the **Export PDF** button. The server uses Slidev's built-in export with Playwright/Chromium.
 
 ### Download Markdown
 
@@ -123,15 +153,7 @@ Edit `editor/public/index.html`:
 - Monaco editor theme: Change `theme: 'vs-dark'` to `'vs'` for light mode
 - Tailwind styles: Modify the HTML classes
 
-## Development
-
-### Presentation Only
-
-```bash
-cd presentation
-npm install
-npm run dev
-```
+## Development (Without Docker)
 
 ### Editor Only
 
@@ -141,29 +163,34 @@ npm install
 npm run dev
 ```
 
-### Both Services
+### Presentation Only
 
 ```bash
-docker-compose up --build
+cd presentation
+npm install
+npm run dev
 ```
+
+Note: When running separately, you'll need to update `SLIDEV_URL` in the editor to point to the Slidev server.
 
 ## Troubleshooting
 
-### Preview not loading
+### Preview not loading (blank screen)
 
-- Check that Sli.dev is running on port 3030
-- Check browser console for iframe errors
-- Some browsers block mixed content (HTTP/HTTPS)
+- Ensure Slidev is running with `--base /slidev/`
+- Check browser console for proxy errors
+- Verify the Editor's `/slidev` proxy is working
 
 ### Changes not saving
 
 - Check the terminal for API errors
-- Ensure the presentation folder is mounted correctly
+- Verify volume mount is correct (Railway: `/app/userdata`)
 
 ### PDF export not working
 
-- Playwright/Chromium must be installed in the Sli.dev container
-- Use `docker compose run slidev npm run export` for CLI export
+- Playwright/Chromium is installed in `Dockerfile.railway`
+- Check logs for Chromium errors
+- Export can take 30-60 seconds for complex presentations
 
 ## License
 

@@ -2,8 +2,8 @@
   "name": "slidev-presentation",
   "private": true,
   "scripts": {
-    "dev": "slidev --remote",
-    "build": "slidev build",
+    "dev": "slidev --remote --port 3030 --base /slidev/",
+    "build": "slidev build --base /slidev/",
     "export": "slidev export --output slides-export.pdf"
   },
   "dependencies": {

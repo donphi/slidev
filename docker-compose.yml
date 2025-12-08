@@ -1,40 +1,27 @@
-services:
-  # Sli.dev Presentation Engine
-  slidev:
-    build: ./presentation
-    ports:
-      - "3030:3030"
-    volumes:
-      - ./presentation:/app
-      - /app/node_modules
-    restart: unless-stopped
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    networks:
-      - slidev-network
+# Local development - uses the same combined approach as Railway
+# Run: docker-compose up --build
 
-  # Editor Service (Backend + Frontend)
-  editor:
-    build: ./editor
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.railway
     ports:
-      - "3001:3000"
+      - "3000:3000"
     volumes:
-      # Mount presentation folder so editor can read/write slides.md
-      - ./presentation:/app/presentation:rw
+      # Mount user-editable files for persistence during development
+      - ./presentation/slides.md:/app/userdata/slides.md
+      - ./presentation/style.css:/app/userdata/style.css
     environment:
       - PORT=3000
-      - SLIDES_PATH=/app/presentation/slides.md
+      - SLIDES_PATH=/app/userdata/slides.md
+      - STYLE_PATH=/app/userdata/style.css
+      - SLIDEV_DIR=/app/presentation
       - SLIDEV_URL=http://localhost:3030
       # Set a password to protect the editor (leave empty for no auth)
       - EDITOR_PASSWORD=${EDITOR_PASSWORD:-}
       # Number of backup versions to keep (default: 10)
       - MAX_HISTORY=${MAX_HISTORY:-10}
-    depends_on:
-      - slidev
+      # Database URL for persistent storage (optional)
+      - DATABASE_URL=${DATABASE_URL:-}
     restart: unless-stopped
-    networks:
-      - slidev-network
-
-networks:
-  slidev-network:
-    driver: bridge
