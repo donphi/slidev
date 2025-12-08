@@ -885,16 +885,21 @@ Questions?
     // ==========================================
     // PRESENTATION VIEWS
     // ==========================================
+    function getSlidevBaseUrl() {
+      // Ensure slidevUrl ends with a slash for proper path concatenation
+      return slidevUrl.endsWith('/') ? slidevUrl : slidevUrl + '/';
+    }
+    
     function openPresentation() {
-      window.open(slidevUrl, '_blank');
+      window.open(getSlidevBaseUrl(), '_blank');
     }
     
     function openPresenterMode() {
-      window.open(slidevUrl + 'presenter/', '_blank');
+      window.open(getSlidevBaseUrl() + 'presenter/', '_blank');
     }
     
     function openOverview() {
-      window.open(slidevUrl + 'overview/', '_blank');
+      window.open(getSlidevBaseUrl() + 'overview/', '_blank');
     }
 
     // ==========================================
@@ -907,7 +912,7 @@ Questions?
       }
       
       // Open Slidev's browser exporter
-      const exportUrl = slidevUrl.replace(/\/$/, '') + '/export';
+      const exportUrl = getSlidevBaseUrl() + 'export';
       window.open(exportUrl, '_blank');
       
       showToast('Export page opened in new tab. Use the browser exporter to download your PDF.', 'info', 5000);
