@@ -1,131 +1,549 @@
-/* ============================================
-   FONT IMPORTS - Load fonts with all weights
-   ============================================ */
+/* ╔══════════════════════════════════════════════════════════════════════════════╗
+   ║                                                                              ║
+   ║                         SLIDEV PRESENTATION STYLESHEET                       ║
+   ║                                                                              ║
+   ║   This is your master style configuration file. Every visual aspect of       ║
+   ║   your presentation can be controlled from here.                             ║
+   ║                                                                              ║
+   ╠══════════════════════════════════════════════════════════════════════════════╣
+   ║                                                                              ║
+   ║   TABLE OF CONTENTS                                                          ║
+   ║   ─────────────────                                                          ║
+   ║                                                                              ║
+   ║   1. QUICK START GUIDE ................ How to use this file                 ║
+   ║   2. FONT IMPORTS ..................... Google Fonts loading                 ║
+   ║   3. CSS VARIABLES .................... All configurable values              ║
+   ║      3.1 Typography                                                          ║
+   ║      3.2 Colors                                                              ║
+   ║      3.3 Layout & Spacing                                                    ║
+   ║      3.4 Headings (H1, H2, H3)                                               ║
+   ║      3.5 Spacing Elements (<br>, .spacer, <gap>)                             ║
+   ║      3.6 Tables                                                              ║
+   ║      3.7 Lists                                                               ║
+   ║      3.8 Confidential Label                                                  ║
+   ║      3.9 Page Numbers                                                        ║
+   ║   4. BASE STYLES ...................... Core slide styling                   ║
+   ║   5. HEADING STYLES ................... H1, H2, H3 implementation            ║
+   ║   6. TEXT STYLES ...................... Paragraphs, bold, etc.               ║
+   ║   7. SPACING ELEMENTS ................. <br>, <gap>, .spacer, .pull-*        ║
+   ║   8. TABLE STYLES ..................... Tables and condensed variants        ║
+   ║   9. LIST STYLES ...................... Bullets and numbered lists           ║
+   ║   10. UTILITY CLASSES ................. Layouts, density, font sizes         ║
+   ║   11. CUSTOM CSS SECTION .............. Add your own styles here             ║
+   ║                                                                              ║
+   ╚══════════════════════════════════════════════════════════════════════════════╝ */
+
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   1. QUICK START GUIDE                                                       │
+   │                                                                              │
+   │   This section explains how to customize your slides and add spacing.        │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   ADDING VERTICAL SPACE IN YOUR SLIDES
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   There are THREE ways to add vertical spacing in your slides.md file:
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 1: Line Break <br>                                                  │
+   │  ─────────────────────────                                                  │
+   │                                                                             │
+   │  Use <br> to add a small vertical gap. The height is controlled by          │
+   │  the --br-height variable (default: 4px).                                   │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  # My Title                                                         │    │
+   │  │  <br>                                                               │    │
+   │  │  Some content after a small gap                                     │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   │                                                                             │
+   │  Stack multiple <br> tags for larger gaps:                                  │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  <br><br><br>   ← Creates 3x the spacing                            │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 2: Spacer Div <div class="spacer"></div>                            │
+   │  ───────────────────────────────────────────────                            │
+   │                                                                             │
+   │  Use the .spacer class for the same effect as <br>.                         │
+   │  This is useful when <br> doesn't work in certain contexts.                 │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  # My Title                                                         │    │
+   │  │  <div class="spacer"></div>                                         │    │
+   │  │  Content after spacing                                              │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 3: Custom Height Spacer (inline style)                              │
+   │  ─────────────────────────────────────────────────                          │
+   │                                                                             │
+   │  For a specific height, use inline styling:                                 │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  <div style="height: 20px"></div>   ← Exactly 20 pixels             │    │
+   │  │  <div style="height: 2rem"></div>   ← 2x the base font size         │    │
+   │  │  <div style="height: 5vh"></div>    ← 5% of viewport height         │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   REDUCING VERTICAL SPACE (Pulling Elements Closer)
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Sometimes elements have too much space between them. Use these methods to
+   REDUCE spacing and pull content closer together:
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 1: The <gap> Element                                                │
+   │  ─────────────────────────────                                              │
+   │                                                                             │
+   │  Use <gap></gap> to PULL the next element UP (reduce space).                │
+   │  The default pull is controlled by --gap-height variable (default: -8px).   │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  # My Title                                                         │    │
+   │  │  <gap></gap>                                                        │    │
+   │  │  ## Subtitle now closer to title                                    │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   │                                                                             │
+   │  Stack multiple for stronger effect:                                        │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  <gap></gap><gap></gap>   ← Pulls up 2x as much                     │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 2: Pull-Up Classes                                                  │
+   │  ─────────────────────────────                                              │
+   │                                                                             │
+   │  Wrap content in a div with pull classes for preset negative margins:       │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  # My Title                                                         │    │
+   │  │  <div class="pull-sm">                                              │    │
+   │  │                                                                     │    │
+   │  │  ## This subtitle is pulled up slightly                             │    │
+   │  │  </div>                                                             │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   │                                                                             │
+   │  Available pull classes:                                                    │
+   │  ┌─────────────┬─────────────────────────────────────────────────────┐      │
+   │  │ Class       │ Effect                                              │      │
+   │  ├─────────────┼─────────────────────────────────────────────────────┤      │
+   │  │ pull-xs     │ Pull up 4px  (extra small)                          │      │
+   │  │ pull-sm     │ Pull up 8px  (small)                                │      │
+   │  │ pull-md     │ Pull up 16px (medium)                               │      │
+   │  │ pull-lg     │ Pull up 24px (large)                                │      │
+   │  │ pull-xl     │ Pull up 32px (extra large)                          │      │
+   │  └─────────────┴─────────────────────────────────────────────────────┘      │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  METHOD 3: Custom Negative Margin (inline style)                            │
+   │  ─────────────────────────────────────────────────                          │
+   │                                                                             │
+   │  For precise control, use inline negative margin:                           │
+   │                                                                             │
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  <div style="margin-top: -10px">                                    │    │
+   │  │  This content is pulled up exactly 10 pixels                        │    │
+   │  │  </div>                                                             │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   ADDING CUSTOM CSS TO INDIVIDUAL SLIDES
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   You can add CSS that only applies to ONE slide using <style scoped>:
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  ---                                                                │    │
+   │  │  # My Special Slide                                                 │    │
+   │  │                                                                     │    │
+   │  │  <style scoped>                                                     │    │
+   │  │  h1 { color: red; }           /* Only THIS slide's H1 is red */     │    │
+   │  │  p { font-size: 2rem; }       /* Only THIS slide's text is big */   │    │
+   │  │  </style>                                                           │    │
+   │  │                                                                     │    │
+   │  │  This text will be large, only on this slide.                       │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   USING UTILITY CLASSES IN FRONTMATTER
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   Apply pre-built classes to entire slides via the frontmatter 'class' property:
+
+   ┌─────────────────────────────────────────────────────────────────────────────┐
+   │  Example in slides.md:                                                      │
+   │  ┌─────────────────────────────────────────────────────────────────────┐    │
+   │  │  ---                                                                │    │
+   │  │  class: dense text-sm        ← Tight spacing + small text           │    │
+   │  │  ---                                                                │    │
+   │  │  # Slide with lots of content                                       │    │
+   │  │  - Item 1                                                           │    │
+   │  │  - Item 2                                                           │    │
+   │  └─────────────────────────────────────────────────────────────────────┘    │
+   │                                                                             │
+   │  Available classes:                                                         │
+   │  ┌───────────────┬────────────────────────────────────────────────────┐     │
+   │  │ Class         │ Effect                                             │     │
+   │  ├───────────────┼────────────────────────────────────────────────────┤     │
+   │  │ dense         │ Very tight bullet spacing (0.15rem)                │     │
+   │  │ tight         │ Tight bullet spacing (0.25rem)                     │     │
+   │  │ compact       │ Slightly tight spacing (0.35rem)                   │     │
+   │  │ text-xs       │ Extra small font (0.75rem)                         │     │
+   │  │ text-sm       │ Small font (0.875rem)                              │     │
+   │  │ text-base     │ Normal font (1rem)                                 │     │
+   │  │ text-lg       │ Large font (1.125rem)                              │     │
+   │  │ table-xs      │ Extra small table                                  │     │
+   │  │ table-sm      │ Small table                                        │     │
+   │  │ table-md      │ Medium table                                       │     │
+   │  │ pull-xs       │ Pull content up 4px                                │     │
+   │  │ pull-sm       │ Pull content up 8px                                │     │
+   │  │ pull-md       │ Pull content up 16px                               │     │
+   │  │ pull-lg       │ Pull content up 24px                               │     │
+   │  │ pull-xl       │ Pull content up 32px                               │     │
+   │  └───────────────┴────────────────────────────────────────────────────┘     │
+   └─────────────────────────────────────────────────────────────────────────────┘
+
+   ═══════════════════════════════════════════════════════════════════════════════
+   HOW TO CHANGE GLOBAL STYLES
+   ═══════════════════════════════════════════════════════════════════════════════
+
+   To change styles across ALL slides, modify the CSS Variables in Section 3.
+   Each variable is named clearly and has a comment explaining what it does.
+
+   Example: To make all H1 headings blue, find --h1-color and change it:
+
+   BEFORE:  --h1-color: #696d72;
+   AFTER:   --h1-color: #0066cc;
+
+   ═══════════════════════════════════════════════════════════════════════════════
+*/
+
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   2. FONT IMPORTS                                                            │
+   │                                                                              │
+   │   Load custom fonts from Google Fonts. These are used throughout the         │
+   │   presentation for consistent, professional typography.                      │
+   │                                                                              │
+   │   Currently loaded:                                                          │
+   │   • Nunito Sans (weights: 400, 600, 700, 800, 900) - Main body font          │
+   │   • Fira Code (weights: 400, 500) - Code/monospace font                      │
+   │                                                                              │
+   │   To use different fonts:                                                    │
+   │   1. Visit https://fonts.google.com                                          │
+   │   2. Select your fonts and weights                                           │
+   │   3. Copy the @import URL and replace the one below                          │
+   │   4. Update --slidev-font-family in the variables section                    │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
 
-/* ============================================
-   GLOBAL VARIABLES - EASY CONFIGURATION
-   ============================================ */
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   3. CSS VARIABLES (Custom Properties)                                       │
+   │                                                                              │
+   │   These variables control the entire look of your presentation.              │
+   │   Change a value here, and it updates everywhere automatically.              │
+   │                                                                              │
+   │   Variable naming convention:                                                │
+   │   --category-property: value;                                                │
+   │                                                                              │
+   │   Units guide:                                                               │
+   │   • px   = Fixed pixels (precise, doesn't scale)                             │
+   │   • rem  = Relative to root font size (scales with browser settings)         │
+   │   • em   = Relative to parent element's font size                            │
+   │   • %    = Percentage of parent element                                      │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
 :root {
-  /* ---- FONTS ---- */
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.1 TYPOGRAPHY
+     
+     Base font settings that affect the entire presentation.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Primary font for all text content (headings, paragraphs, lists) */
   --slidev-font-family: 'Nunito Sans', sans-serif;
+
+  /* Monospace font for code blocks and inline code */
   --slidev-code-font-family: 'Fira Code', monospace;
 
-  /* ---- FONT SIZES ---- */
+  /* Base font size - all rem values are calculated from this */
   --slidev-font-size-base: 18px;
+
+  /* Paragraph text size (slightly larger than base for readability) */
   --slidev-font-size-p: 1.1rem;
 
-  /* ---- COLORS ---- */
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.2 COLORS
+     
+     The color palette for your presentation.
+     Use hex codes (#RRGGBB) or named colors.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Primary accent color (used for links, highlights, H2 headings) */
   --slidev-theme-primary: #5d8392;
+
+  /* Secondary accent color (used sparingly for emphasis) */
   --slidev-theme-secondary: #42b883;
+
+  /* Default heading color (affects headings not explicitly styled) */
   --slidev-heading-color: #2c3e50;
+
+  /* Main body text color */
   --slidev-text-color: #333;
+
+  /* Table border color (used for horizontal lines) */
   --slidev-table-border-color: #ddd;
+
+  /* Table header background (currently transparent, kept for reference) */
   --slidev-table-header-bg: #f5f5f5;
 
-  /* ============================================
-     LAYOUT MARGINS (content slides)
-     Adjust these to control slide padding
-     ============================================ */
-  --slide-padding-top: 2rem;      /* Distance from top edge */
-  --slide-padding-right: 4.1rem;    /* Distance from right edge */
-  --slide-padding-bottom: 2rem;   /* Distance from bottom edge */
-  --slide-padding-left: 4.1rem;     /* Distance from left edge */
 
-  /* ============================================
-     MAIN HEADING (H1) - Title on each slide
-     ============================================ */
-  --h1-font-size: 2.5rem;         /* Size of main heading */
-  --h1-color: #696d72;            /* Color of main heading */
-  --h1-margin-top: 0.5rem;             /* Space ABOVE heading */
-  --h1-margin-bottom: 0;      /* Space BELOW heading */
-  --h1-margin-left: 0;            /* Indent from left (0 = flush with content) */
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.3 LAYOUT & SPACING
+     
+     Control the padding/margins around slide content.
+     These create the "safe area" where your content lives.
+     
+     ┌─────────────────────────────────────────────────────┐
+     │ ← padding-left          padding-right →            │
+     │     ┌─────────────────────────────────────┐        │
+     │  ↑  │                                     │   ↑    │
+     │ top │         YOUR CONTENT AREA           │  top   │
+     │  ↓  │                                     │   ↓    │
+     │     └─────────────────────────────────────┘        │
+     │ ← padding-left       padding-bottom →              │
+     └─────────────────────────────────────────────────────┘
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Distance from the top edge of the slide to content */
+  --slide-padding-top: 2rem;
+
+  /* Distance from the right edge of the slide to content */
+  --slide-padding-right: 4.1rem;
+
+  /* Distance from the bottom edge of the slide to content */
+  --slide-padding-bottom: 2rem;
+
+  /* Distance from the left edge of the slide to content */
+  --slide-padding-left: 4.1rem;
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.4 HEADINGS
+     
+     Configure each heading level independently.
+     
+     Hierarchy:
+     • H1 = Main slide title (largest, typically gray)
+     • H2 = Section heading within slide (blue, prominent)
+     • H3 = Sub-section heading (smaller, dark)
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* ─────────────────────────────────────────────────────────
+     H1 - Main Title (# in markdown)
+     The primary heading on each slide
+     ───────────────────────────────────────────────────────── */
+  --h1-font-size: 2.5rem;
+  --h1-color: #696d72;
+  --h1-margin-top: 0.5rem;
+  --h1-margin-bottom: 0;
+  --h1-margin-left: 0;
   --h1-line-height: 1.2;
-  --h1-font-weight: 700;          /* bold = 700, normal = 400 */
+  --h1-font-weight: 700;
 
-  /* ============================================
-     SUBHEADING (H2) - Now the larger blue heading
-     ============================================ */
+  /* ─────────────────────────────────────────────────────────
+     H2 - Subheading (## in markdown)
+     Used for major sections within a slide
+     ───────────────────────────────────────────────────────── */
   --h2-font-size: 1.4rem;
-  --h2-color: #5d8392;           /* Primary color (blue) */
+  --h2-color: #5d8392;
   --h2-margin-top: 0.5em;
   --h2-margin-bottom: 0.5em;
   --h2-line-height: 1.3;
   --h2-font-weight: 700;
 
-  /* ============================================
-     SECTION HEADING (H3) - Now the smaller dark heading
-     ============================================ */
+  /* ─────────────────────────────────────────────────────────
+     H3 - Section Heading (### in markdown)
+     Used for smaller sections or labels
+     ───────────────────────────────────────────────────────── */
   --h3-font-size: 1rem;
-  --h3-color: #2d4047;           /* Dark color */
+  --h3-color: #2d4047;
   --h3-margin-top: 0.1em;
   --h3-margin-bottom: 0.2em;
   --h3-font-weight: 700;
 
-  /* ============================================
-     LINE BREAK / SPACER HEIGHT
-     ============================================ */
-  --br-height: 4px;               /* Height of <br> and .spacer - use px for precision */
 
-  /* ============================================
-     TABLE SETTINGS
-     ============================================ */
-  --table-line-height: 1.1;       /* Line height for table cells (1.2 = tight, 1.5 = loose) */
-  --table-font-size: 0.6em;       /* Default table font size */
-  --table-cell-padding: 0.4rem;   /* Padding inside cells */
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.5 SPACING ELEMENTS
+     
+     Control vertical spacing - both ADDING and REDUCING space.
+     
+     ┌─────────────────────────────────────────────────────────────────────┐
+     │  TO ADD SPACE:                                                      │
+     │  <br>                              → Add small gap                  │
+     │  <div class="spacer"></div>        → Same as <br>                   │
+     │  <div style="height: 20px"></div>  → Custom height                  │
+     ├─────────────────────────────────────────────────────────────────────┤
+     │  TO REDUCE SPACE:                                                   │
+     │  <gap></gap>                       → Pull content up                │
+     │  <div class="pull-sm">...</div>    → Pull up with class             │
+     └─────────────────────────────────────────────────────────────────────┘
+     
+     ══════════════════════════════════════════════════════════════════════════ */
 
-  /* ============================================
-     LIST / BULLET SETTINGS
-     ============================================ */
-  --list-item-spacing: 0.5rem;    /* Space between bullet items */
-  --list-line-height: 1.5;        /* Line height within bullet text */
-  --list-font-size: 1em;     /* Font size for list items */
+  /* Height of each <br> tag and .spacer element (POSITIVE = adds space) */
+  --br-height: 4px;
 
-  /* ============================================
-     CONFIDENTIAL LABEL
-     Position: set ONE of top/bottom, ONE of left/right
-     Use 'auto' for the opposite side
-     ============================================ */
-  --confidential-top: 1.6rem;           /* Distance from top (use 'auto' if using bottom) */
-  --confidential-bottom: auto;      /* Distance from bottom */
-  --confidential-left: auto;        /* Distance from left */
-  --confidential-right: 4.2rem;         /* Distance from right (use 'auto' if using left) */
-  --confidential-font-size: 0.5rem;   /* Font size */
-  --confidential-tracking: 0.1em;    /* Letter spacing (tracking) */
-  --confidential-color: #441313;         /* Text color */
+  /* Height of each <gap> element (NEGATIVE = reduces space, pulls up) */
+  --gap-height: -8px;
 
-  /* ============================================
-     PAGE NUMBER (X of Y)
-     Position: set ONE of top/bottom, ONE of left/right
-     Use 'auto' for the opposite side
-     ============================================ */
-  --page-number-top: auto;            /* Distance from top (use 'auto' if using bottom) */
-  --page-number-bottom: 1.6rem;       /* Distance from bottom */
-  --page-number-left: 4.2rem;           /* Distance from left (use 'auto' if using right) */
-  --page-number-right: auto;        /* Distance from right */
-  --page-number-font-size: 0.4rem;    /* Font size */
-  --page-number-color: #666;          /* Text color */
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.6 TABLES
+     
+     Configure table appearance.
+     Tables use horizontal lines only with alternating row colors.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Line height within table cells (1.0 = tight, 1.5 = loose) */
+  --table-line-height: 1.1;
+
+  /* Default font size for tables (relative to parent) */
+  --table-font-size: 0.6em;
+
+  /* Padding inside each table cell */
+  --table-cell-padding: 0.4rem;
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.7 LISTS
+     
+     Configure bullet points and numbered lists.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Vertical space between list items */
+  --list-item-spacing: 0.5rem;
+
+  /* Line height within each list item */
+  --list-line-height: 1.5;
+
+  /* Font size for list items */
+  --list-font-size: 1em;
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.8 CONFIDENTIAL LABEL
+     
+     The "CONFIDENTIAL" watermark that appears on slides.
+     Defined in global-bottom.vue, styled here via CSS variables.
+     
+     POSITIONING TIP:
+     Set ONE of top/bottom to a value, and the OTHER to 'auto'.
+     Set ONE of left/right to a value, and the OTHER to 'auto'.
+     
+     Example positions:
+     ┌────────────────────────────────────────────────────────┐
+     │ TOP-LEFT         TOP-RIGHT                            │
+     │ top: 1rem        top: 1rem                            │
+     │ left: 1rem       right: 1rem                          │
+     │                                                        │
+     │ BOTTOM-LEFT      BOTTOM-RIGHT                         │
+     │ bottom: 1rem     bottom: 1rem                         │
+     │ left: 1rem       right: 1rem                          │
+     └────────────────────────────────────────────────────────┘
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Vertical position (use one, set other to 'auto') */
+  --confidential-top: 1.6rem;
+  --confidential-bottom: auto;
+
+  /* Horizontal position (use one, set other to 'auto') */
+  --confidential-left: auto;
+  --confidential-right: 4.2rem;
+
+  /* Typography */
+  --confidential-font-size: 0.5rem;
+  --confidential-tracking: 0.1em;
+  --confidential-color: #441313;
+
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     3.9 PAGE NUMBERS
+     
+     The "X of Y" page indicator on slides.
+     Defined in global-bottom.vue, styled here via CSS variables.
+     
+     Uses same positioning system as confidential label.
+     ══════════════════════════════════════════════════════════════════════════ */
+
+  /* Vertical position (use one, set other to 'auto') */
+  --page-number-top: auto;
+  --page-number-bottom: 1.6rem;
+
+  /* Horizontal position (use one, set other to 'auto') */
+  --page-number-left: 4.2rem;
+  --page-number-right: auto;
+
+  /* Typography */
+  --page-number-font-size: 0.4rem;
+  --page-number-color: #666;
+
 }
 
-/* ============================================
-   APPLY LAYOUT STYLES
-   ============================================ */
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   4. BASE STYLES                                                             │
+   │                                                                              │
+   │   Core styling applied to every slide. These rules set up the foundation     │
+   │   that all other styles build upon.                                          │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* Base slide container - applies to all slides */
 .slidev-layout {
   font-family: var(--slidev-font-family);
   font-size: var(--slidev-font-size-base);
   color: var(--slidev-text-color);
-  
-  /* Apply individual padding values */
   padding-top: var(--slide-padding-top);
   padding-right: var(--slide-padding-right);
   padding-bottom: var(--slide-padding-bottom);
   padding-left: var(--slide-padding-left);
 }
 
-/* 
-  Default background for ALL slides (footer.png)
-  This applies to every slide except intro which has its own background
-*/
+/* Background image for standard slides
+   The :not(.intro) selector excludes the intro/cover slides
+   which typically have their own background defined in frontmatter */
 .slidev-layout:not(.intro) {
   background-image: url('/img/footer.png');
   background-size: cover;
@@ -133,11 +551,17 @@
   background-repeat: no-repeat;
 }
 
-/* ============================================
-   HEADING STYLES
-   ============================================ */
 
-/* Main Heading (H1) - The title on each slide */
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   5. HEADING STYLES                                                          │
+   │                                                                              │
+   │   Implementation of the heading variables defined above.                     │
+   │   These rules apply the CSS variable values to actual heading elements.      │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* H1 - Main slide title (# in markdown) */
 .slidev-layout h1 {
   font-size: var(--h1-font-size);
   color: var(--h1-color);
@@ -148,7 +572,7 @@
   font-weight: var(--h1-font-weight);
 }
 
-/* Subheading (H2) */
+/* H2 - Subheading (## in markdown) */
 .slidev-layout h2 {
   font-size: var(--h2-font-size);
   color: var(--h2-color);
@@ -158,7 +582,7 @@
   font-weight: var(--h2-font-weight);
 }
 
-/* Section Heading (H3) */
+/* H3 - Section heading (### in markdown) */
 .slidev-layout h3 {
   font-size: var(--h3-font-size);
   color: var(--h3-color);
@@ -167,91 +591,198 @@
   font-weight: var(--h3-font-weight);
 }
 
-/* Text */
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   6. TEXT STYLES                                                             │
+   │                                                                              │
+   │   Styling for paragraphs, bold text, and other inline elements.              │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* Paragraph text */
 .slidev-layout p {
   font-size: var(--slidev-font-size-p);
   line-height: 1.6;
   margin-bottom: 0.8em;
 }
 
-/* Bold text - **text** in markdown */
+/* Bold text - rendered from **text** or __text__ in markdown */
 .slidev-layout strong,
 .slidev-layout b {
   font-weight: 700 !important;
 }
 
-/* ============================================
-   LINE BREAK HEIGHT - <br> spacing
-   ============================================ */
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   7. SPACING ELEMENTS                                                        │
+   │                                                                              │
+   │   These styles control vertical spacing - both ADDING and REDUCING space.   │
+   │                                                                              │
+   │   ═══════════════════════════════════════════════════════════════════════    │
+   │   TO ADD SPACE (push content apart):                                         │
+   │   ═══════════════════════════════════════════════════════════════════════    │
+   │                                                                              │
+   │   <br>                              → Small gap (default 4px)                │
+   │   <br><br><br>                      → Stack for larger gaps                  │
+   │   <div class="spacer"></div>        → Same as <br>                           │
+   │   <div style="height: 20px"></div>  → Custom exact height                    │
+   │                                                                              │
+   │   ═══════════════════════════════════════════════════════════════════════    │
+   │   TO REDUCE SPACE (pull content closer):                                     │
+   │   ═══════════════════════════════════════════════════════════════════════    │
+   │                                                                              │
+   │   <gap></gap>                       → Pull up (default -8px)                 │
+   │   <gap></gap><gap></gap>            → Stack for stronger pull                │
+   │   <div class="pull-sm">...</div>    → Wrap content, pull up 8px              │
+   │   <div class="pull-md">...</div>    → Wrap content, pull up 16px             │
+   │   <div class="pull-lg">...</div>    → Wrap content, pull up 24px             │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* ─────────────────────────────────────────────────────────
+   ADDING Space: <br> and .spacer
+   ───────────────────────────────────────────────────────── */
+
+/* Transform <br> from inline to block element with configurable height */
 .slidev-layout br {
   display: block;
   content: "";
-  line-height: var(--br-height);              /* Controls the height of line break */
+  line-height: var(--br-height);
 }
 
-/* Alternative: use a spacer class for precise control */
-/* Usage in slides.md: <div class="spacer"></div> */
+/* Alternative spacer using a div - same height as <br> */
 .slidev-layout .spacer {
   height: var(--br-height);
 }
 
-/* ============================================
-   TABLES - Horizontal lines only, light fill
-   ============================================ */
+/* ─────────────────────────────────────────────────────────
+   REDUCING Space: <gap> and .pull-* classes
+   
+   Use these to PULL content CLOSER together by applying
+   negative margins.
+   ───────────────────────────────────────────────────────── */
+
+/* The <gap> element - reduces space between elements
+   Usage: <gap></gap> or stack multiple <gap></gap><gap></gap> */
+.slidev-layout gap {
+  display: block;
+  margin-bottom: var(--gap-height);
+}
+
+/* Pull-up utility classes - wrap content to pull it up
+   Usage: <div class="pull-sm">Content pulled up</div> */
+.slidev-layout .pull-xs { margin-top: -4px !important; }
+.slidev-layout .pull-sm { margin-top: -8px !important; }
+.slidev-layout .pull-md { margin-top: -16px !important; }
+.slidev-layout .pull-lg { margin-top: -24px !important; }
+.slidev-layout .pull-xl { margin-top: -32px !important; }
+
+/* Also support on slidev-page level for frontmatter usage */
+.slidev-page.pull-xs .slidev-layout { margin-top: -4px !important; }
+.slidev-page.pull-sm .slidev-layout { margin-top: -8px !important; }
+.slidev-page.pull-md .slidev-layout { margin-top: -16px !important; }
+.slidev-page.pull-lg .slidev-layout { margin-top: -24px !important; }
+.slidev-page.pull-xl .slidev-layout { margin-top: -32px !important; }
+
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   8. TABLE STYLES                                                            │
+   │                                                                              │
+   │   Tables feature:                                                            │
+   │   • Horizontal lines only (no vertical borders)                              │
+   │   • Alternating row colors for readability                                   │
+   │   • Blue header text matching the theme                                      │
+   │   • Condensed variants for data-heavy slides                                 │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* ─────────────────────────────────────────────────────────
+   Base Table Styles
+   ───────────────────────────────────────────────────────── */
+
+/* Table container */
 .slidev-layout table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--table-font-size);         /* Configurable font size */
+  font-size: var(--table-font-size);
   margin: 0.5rem 0;
-  border: none;                              /* No outer border */
+  border: none;
 }
 
+/* Table cells (both header and data) */
 .slidev-layout th,
 .slidev-layout td {
-  border: none;                              /* Remove all borders */
-  border-bottom: 1px solid #e0e0e0;          /* Horizontal line only */
-  padding: var(--table-cell-padding);        /* Configurable padding */
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  padding: var(--table-cell-padding);
   text-align: left;
-  line-height: var(--table-line-height);     /* Configurable line height */
+  line-height: var(--table-line-height);
 }
 
+/* Table header cells */
 .slidev-layout th {
-  background-color: transparent;             /* No header background */
-  font-weight: 700 !important;               /* Bold - 700 for strong bold */
-  color: #5d8392;                            /* Light blue - matches h3/subheading */
-  border-bottom: 1px solid #e0e0e0;          /* Same thickness as other lines */
+  background-color: transparent;
+  font-weight: 700 !important;
+  color: #5d8392;
+  border-bottom: 1px solid #e0e0e0;
 }
 
+/* Alternating row colors (zebra striping) */
 .slidev-layout tr:nth-child(even) {
-  background-color: #f9f9fb;                 /* Very light grey fill */
+  background-color: #f9f9fb;
 }
 
+/* Remove bottom border from last row */
 .slidev-layout tr:last-child td {
-  border-bottom: none;                       /* No line on last row */
+  border-bottom: none;
 }
 
-/* ============================================
-   CONDENSED TABLES - for large data tables
-   Use with <style scoped> in slides
-   ============================================ */
+/* ─────────────────────────────────────────────────────────
+   Condensed Table Variants
+   
+   Use these classes when you have large tables that need
+   to fit more data on a single slide.
+   
+   USAGE: Wrap your table in a div with the class:
+   
+   <div class="table-xs">
+   
+   | Column 1 | Column 2 |
+   |----------|----------|
+   | Data     | Data     |
+   
+   </div>
+   ───────────────────────────────────────────────────────── */
 
-/* table-xs: Extra small - very tight */
+/* Extra Small - Very tight spacing for maximum data density */
 .table-xs table { font-size: 0.5em !important; }
 .table-xs th, .table-xs td { padding: 0.15rem 0.25rem !important; }
 
-/* table-sm: Small - compact */
+/* Small - Compact but still readable */
 .table-sm table { font-size: 0.55em !important; }
 .table-sm th, .table-sm td { padding: 0.2rem 0.3rem !important; }
 
-/* table-md: Medium - slightly condensed */
+/* Medium - Slightly condensed from default */
 .table-md table { font-size: 0.6em !important; }
 .table-md th, .table-md td { padding: 0.25rem 0.35rem !important; }
 
-/* Direct class on wrapper div */
+/* Alternative class name for condensed tables */
 .condensed-table table { font-size: 0.5em !important; }
 .condensed-table th, .condensed-table td { padding: 0.15rem 0.25rem !important; }
 
-/* Lists */
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   9. LIST STYLES                                                             │
+   │                                                                              │
+   │   Styling for bullet points (unordered lists) and numbered lists.            │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* Unordered and ordered list containers */
 .slidev-layout ul,
 .slidev-layout ol {
   margin-bottom: 1rem;
@@ -259,12 +790,35 @@
   list-style-type: disc;
 }
 
+/* Individual list items */
 .slidev-layout li {
-  margin-bottom: var(--list-item-spacing);    /* Space between bullets */
-  line-height: var(--list-line-height);       /* Line height within bullet text */
+  margin-bottom: var(--list-item-spacing);
+  line-height: var(--list-line-height);
   font-size: var(--list-font-size);
 }
-/* Custom Chart Container */
+
+
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   10. UTILITY CLASSES                                                        │
+   │                                                                              │
+   │   Pre-built helper classes that can be applied to slides or elements.        │
+   │                                                                              │
+   │   USAGE IN FRONTMATTER:                                                      │
+   │   ---                                                                        │
+   │   class: dense text-sm                                                       │
+   │   ---                                                                        │
+   │                                                                              │
+   │   USAGE ON ELEMENTS:                                                         │
+   │   <div class="layout-center">Centered content</div>                          │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* ─────────────────────────────────────────────────────────
+   Layout Containers
+   ───────────────────────────────────────────────────────── */
+
+/* Container for charts and visualizations */
 .chart-container {
   width: 100%;
   height: 400px;
@@ -276,13 +830,14 @@
   margin: 1rem 0;
 }
 
-/* Utility for layout locations (overrides) */
+/* Align content to top-left corner */
 .layout-top-left {
   align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
 }
 
+/* Center content both horizontally and vertically */
 .layout-center {
   display: flex;
   flex-direction: column;
@@ -292,52 +847,102 @@
   height: 100%;
 }
 
-/* ============================================
-   SLIDE UTILITY CLASSES
-   Use in frontmatter: class: dense text-sm
-   ============================================ */
+/* ─────────────────────────────────────────────────────────
+   List Density Classes
+   
+   Control the spacing between bullet points.
+   Use in frontmatter: class: dense
+   ───────────────────────────────────────────────────────── */
 
-/* LINE SPACING - tighter bullets/lines */
+/* Dense - Very tight bullet spacing (0.15rem) */
 .dense li,
 .slidev-layout.dense li,
 .slidev-page.dense .slidev-layout li {
-  margin-bottom: 0.15rem !important;          /* Very tight */
+  margin-bottom: 0.15rem !important;
 }
+
+/* Tight - Tight bullet spacing (0.25rem) */
 .tight li,
 .slidev-layout.tight li,
 .slidev-page.tight .slidev-layout li {
-  margin-bottom: 0.25rem !important;          /* Tight */
+  margin-bottom: 0.25rem !important;
 }
+
+/* Compact - Slightly tight spacing (0.35rem) */
 .compact li,
 .slidev-layout.compact li,
 .slidev-page.compact .slidev-layout li {
-  margin-bottom: 0.35rem !important;          /* Slightly tight */
+  margin-bottom: 0.35rem !important;
 }
 
-/* FONT SIZE overrides - apply to whole slide */
+/* ─────────────────────────────────────────────────────────
+   Font Size Classes
+   
+   Override font size for entire slides.
+   Use in frontmatter: class: text-sm
+   ───────────────────────────────────────────────────────── */
+
+/* Extra Small text (0.75rem / 12px at default base) */
 .text-xs,
 .text-xs *,
 .slidev-page.text-xs .slidev-layout,
 .slidev-page.text-xs .slidev-layout * {
-  font-size: 0.75rem !important;              /* Extra small */
+  font-size: 0.75rem !important;
 }
+
+/* Small text (0.875rem / 14px at default base) */
 .text-sm,
 .text-sm *,
 .slidev-page.text-sm .slidev-layout,
 .slidev-page.text-sm .slidev-layout * {
-  font-size: 0.875rem !important;             /* Small */
+  font-size: 0.875rem !important;
 }
+
+/* Base/Normal text (1rem / 16px at default base) */
 .text-base,
 .text-base *,
 .slidev-page.text-base .slidev-layout,
 .slidev-page.text-base .slidev-layout * {
-  font-size: 1rem !important;                 /* Normal */
+  font-size: 1rem !important;
 }
+
+/* Large text (1.125rem / 18px at default base) */
 .text-lg,
 .text-lg *,
 .slidev-page.text-lg .slidev-layout,
 .slidev-page.text-lg .slidev-layout * {
-  font-size: 1.125rem !important;             /* Large */
+  font-size: 1.125rem !important;
 }
 
 
+/* ┌──────────────────────────────────────────────────────────────────────────────┐
+   │                                                                              │
+   │   11. CUSTOM CSS SECTION                                                     │
+   │                                                                              │
+   │   Add your own custom styles below this line.                                │
+   │   These will not be overwritten when updating the template.                  │
+   │                                                                              │
+   │   EXAMPLES:                                                                  │
+   │                                                                              │
+   │   Custom colored box:                                                        │
+   │   .highlight-box {                                                           │
+   │     background: #fff3cd;                                                     │
+   │     border-left: 4px solid #ffc107;                                          │
+   │     padding: 1rem;                                                           │
+   │     margin: 1rem 0;                                                          │
+   │   }                                                                          │
+   │                                                                              │
+   │   Custom spacing class:                                                      │
+   │   .gap-large {                                                               │
+   │     height: 40px;                                                            │
+   │   }                                                                          │
+   │                                                                              │
+   │   Custom text color:                                                         │
+   │   .text-danger { color: #dc3545 !important; }                                │
+   │   .text-success { color: #28a745 !important; }                               │
+   │                                                                              │
+   └──────────────────────────────────────────────────────────────────────────────┘ */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   YOUR CUSTOM STYLES GO BELOW THIS LINE
+   ═══════════════════════════════════════════════════════════════════════════════ */

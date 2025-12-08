@@ -228,6 +228,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Proxy /slidev/* requests to the internal Slidev server
 // This allows external users to access Slidev through the editor
 // ==========================================
+
+// Track Slidev restart state to suppress expected errors during rebuilds
+let slidevRestarting = false;
+let lastProxyError = 0;
+const PROXY_ERROR_THROTTLE = 2000; // Only log errors every 2 seconds
+
 app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
@@ -239,15 +245,59 @@ app.use('/slidev', createProxyMiddleware({
     return path.startsWith('/slidev') ? path : `/slidev${path}`;
   },
   on: {
-    proxyReq: (proxyReq, req) => {
-      const originalPath = (req as Request).originalUrl || req.url || '/';
-      const finalPath = (proxyReq.path || '').startsWith('/')
-        ? proxyReq.path
-        : `/${proxyReq.path}`;
-      console.log(`🔀 Proxy: ${req.method} ${originalPath} -> ${SLIDEV_URL}${finalPath}`);
+    proxyReq: (_proxyReq, _req) => {
+      // Removed verbose logging - uncomment below for debugging:
+      // const originalPath = (req as Request).originalUrl || req.url || '/';
+      // console.log(`🔀 Proxy: ${req.method} ${originalPath}`);
     },
-    error: (err) => {
-      console.error('❌ Proxy error:', err.message);
+    proxyRes: () => {
+      // Successful response means Slidev is back up
+      if (slidevRestarting) {
+        console.log('✅ Slidev is back online');
+        slidevRestarting = false;
+      }
+    },
+    error: (err, _req, res) => {
+      const now = Date.now();
+      const errMsg = (err as Error).message || '';
+      
+      // Common errors during Slidev restart - throttle logging
+      const isRestartError = errMsg.includes('ECONNRESET') || 
+                            errMsg.includes('ECONNREFUSED') ||
+                            errMsg.includes('socket hang up');
+      
+      if (isRestartError) {
+        if (!slidevRestarting) {
+          slidevRestarting = true;
+          console.log('⏳ Slidev is restarting... (this is normal after saving)');
+        }
+        // Don't spam logs during restart
+        if (now - lastProxyError < PROXY_ERROR_THROTTLE) {
+          return;
+        }
+        lastProxyError = now;
+      } else {
+        // Log unexpected errors
+        console.error('❌ Proxy error:', errMsg);
+      }
+      
+      // Send a friendly error response if we can
+      if (res && !res.headersSent && 'writeHead' in res) {
+        try {
+          (res as any).writeHead(503, { 'Content-Type': 'text/html' });
+          (res as any).end(`
+            <html>
+              <body style="font-family: system-ui; padding: 40px; text-align: center;">
+                <h2>⏳ Slidev is restarting...</h2>
+                <p>This happens after saving changes. Please wait a moment.</p>
+                <p><button onclick="location.reload()">Refresh</button></p>
+              </body>
+            </html>
+          `);
+        } catch (e) {
+          // Response already sent, ignore
+        }
+      }
     }
   }
 }));
@@ -337,6 +387,10 @@ app.post('/api/slides', async (req: Request, res: Response) => {
     
     // Also write to file system so Sli.dev can read it
     writeFileSync(SLIDES_PATH, content, 'utf-8');
+    console.log(`📝 Slides saved: ${name} (Slidev will reload)`);
+    
+    // Slidev will restart after file change - set flag to suppress proxy errors
+    slidevRestarting = true;
     
     res.json({ success: true, message: 'Saved!' });
   } catch (err) {
@@ -640,6 +694,10 @@ app.post('/api/themes/apply', async (req: Request, res: Response) => {
     
     // Write CSS to style.css
     writeFileSync(STYLE_PATH, cssContent, 'utf-8');
+    console.log(`🎨 Theme "${themeName}" applied to ${presentationName} (Slidev will reload)`);
+    
+    // Slidev will restart after style change - set flag to suppress proxy errors
+    slidevRestarting = true;
     
     // Update presentation's theme reference in DB
     if (db) {
@@ -649,7 +707,6 @@ app.post('/api/themes/apply', async (req: Request, res: Response) => {
       );
     }
     
-    console.log(`Applied theme "${themeName}" to ${presentationName}`);
     res.json({ success: true, message: `Theme "${themeName}" applied` });
   } catch (err) {
     console.error('Apply theme error:', err);

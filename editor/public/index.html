@@ -44,6 +44,29 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { animation: spin 1s linear infinite; }
     .modal-backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
+    
+    /* Preview loading bar */
+    .preview-loader {
+      position: absolute;
+      top: 41px; /* Below the header */
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #1e293b;
+      z-index: 10;
+      overflow: hidden;
+    }
+    .preview-loader-bar {
+      height: 100%;
+      width: 30%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+      animation: loading-slide 1.5s ease-in-out infinite;
+    }
+    @keyframes loading-slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
+    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased">
@@ -169,7 +192,7 @@
       <div id="resizer" class="w-1.5 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
 
       <!-- Preview Panel -->
-      <div class="flex flex-col flex-1 bg-white">
+      <div class="flex flex-col flex-1 bg-white relative">
         <div class="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,12 +200,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
             </svg>
             <span class="text-sm text-slate-400">Preview</span>
+            <span id="preview-status" class="text-xs text-slate-500 hidden"></span>
           </div>
           <button id="btn-refresh" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-smooth" title="Refresh Preview">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
             </svg>
           </button>
+        </div>
+        <!-- Loading bar - shows during Slidev restart -->
+        <div id="preview-loader" class="preview-loader hidden">
+          <div class="preview-loader-bar"></div>
         </div>
         <iframe id="preview-frame" class="flex-1 w-full h-full border-0" src="about:blank"></iframe>
       </div>
@@ -336,6 +364,9 @@
         console.warn('Could not fetch config');
       }
 
+      // Setup preview loading detection and load initial preview
+      setupPreviewLoadDetection();
+      showPreviewLoading('Starting Slidev...');
       document.getElementById('preview-frame').src = slidevUrl;
 
       // Create markdown editor
@@ -418,6 +449,8 @@
         if (res.ok) {
           isDirty = false;
           updateStatus('Saved ✓', 'success');
+          // Show loading bar and refresh preview
+          showPreviewLoading('Reloading...');
           setTimeout(refreshPreview, 300);
         } else {
           updateStatus('Save failed', 'error');
@@ -428,8 +461,38 @@
       }
     }
 
+    // Show/hide preview loading bar
+    function showPreviewLoading(message = 'Loading...') {
+      const loader = document.getElementById('preview-loader');
+      const status = document.getElementById('preview-status');
+      loader.classList.remove('hidden');
+      status.textContent = message;
+      status.classList.remove('hidden');
+    }
+    
+    function hidePreviewLoading() {
+      const loader = document.getElementById('preview-loader');
+      const status = document.getElementById('preview-status');
+      loader.classList.add('hidden');
+      status.classList.add('hidden');
+    }
+
     function refreshPreview() {
-      document.getElementById('preview-frame').src = slidevUrl;
+      const frame = document.getElementById('preview-frame');
+      showPreviewLoading('Waiting for Slidev...');
+      frame.src = slidevUrl;
+    }
+    
+    // Detect when iframe loads (Slidev is ready)
+    function setupPreviewLoadDetection() {
+      const frame = document.getElementById('preview-frame');
+      frame.addEventListener('load', () => {
+        // Small delay to ensure content is rendered
+        setTimeout(hidePreviewLoading, 200);
+      });
+      frame.addEventListener('error', () => {
+        // Keep loading indicator on error, it will retry
+      });
     }
 
     async function exportPdf() {
