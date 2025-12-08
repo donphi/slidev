@@ -230,14 +230,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
-  // Strip /slidev prefix: /slidev/foo -> localhost:3030/foo
-  // Slidev dev server runs at root (base in vite.config affects asset URLs)
-  pathRewrite: { '^/slidev': '' },
   ws: true,  // Enable WebSocket proxy for HMR
+  // Express strips the `/slidev` prefix before the proxy sees the request,
+  // so we add it back to keep Slidev's base path working.
+  pathRewrite: (path) => {
+    if (!path || path === '/') return '/slidev/';
+    return `/slidev${path}`;
+  },
   on: {
     proxyReq: (proxyReq, req) => {
       const originalPath = req.url || '/';
-      console.log(`🔀 Proxy: ${req.method} /slidev${originalPath} -> ${SLIDEV_URL}${originalPath}`);
+      const proxiedPath = originalPath === '/' ? '/slidev/' : `/slidev${originalPath}`;
+      console.log(`🔀 Proxy: ${req.method} /slidev${originalPath} -> ${SLIDEV_URL}${proxiedPath}`);
     },
     error: (err) => {
       console.error('❌ Proxy error:', err.message);

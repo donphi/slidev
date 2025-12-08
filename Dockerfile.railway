@@ -17,6 +17,9 @@ RUN npm install -g concurrently
 # ==========================================
 WORKDIR /app/presentation
 
+# Ensure Slidev and runtime use the same Playwright browser cache path
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
 # Copy and install presentation dependencies
 COPY presentation/package.json ./
 RUN npm install
