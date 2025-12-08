@@ -24,4 +24,15 @@ services:
       - MAX_HISTORY=${MAX_HISTORY:-10}
       # Database URL for persistent storage (optional)
       - DATABASE_URL=${DATABASE_URL:-}
+      # =====================================================
+      # FILE WATCHING CONFIGURATION
+      # =====================================================
+      # Linux (native Docker): Use inotify for instant HMR (FAST!)
+      # Docker Desktop (Windows/macOS): Requires polling (SLOWER)
+      # 
+      # If you're on Windows/macOS with Docker Desktop, uncomment:
+      # - CHOKIDAR_USEPOLLING=true
+      # 
+      # Default: false (uses fast native file events on Linux)
+      - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-false}
     restart: unless-stopped

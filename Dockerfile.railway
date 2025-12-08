@@ -156,8 +156,13 @@ ENV SLIDES_PATH=/app/userdata/slides.md
 ENV STYLE_PATH=/app/userdata/style.css
 ENV SLIDEV_DIR=/app/presentation
 ENV SLIDEV_URL=http://localhost:3030
-ENV CHOKIDAR_USEPOLLING=true
 ENV NODE_NO_WARNINGS=1
+
+# File watching configuration for Vite/Chokidar
+# On Linux (Railway, most cloud providers): native inotify works, no polling needed
+# On Docker Desktop (Windows/macOS): set CHOKIDAR_USEPOLLING=true for file watching
+# By default, we DON'T use polling since Railway runs on Linux
+ENV CHOKIDAR_USEPOLLING=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \

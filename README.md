@@ -69,11 +69,42 @@ slidev/
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) & Docker Compose
+- Node.js 20+ (for native development - recommended for fastest HMR)
 
-### Run Locally
+### Option 1: Native Development (FASTEST HMR) ⚡
+
+For the fastest possible hot-reload experience, run Slidev natively:
 
 ```bash
-# Start the combined container
+# Terminal 1: Start Slidev
+cd presentation
+npm install
+npm run dev:local
+
+# Terminal 2: Start Editor (optional - or just edit slides.md directly)
+cd editor
+npm install
+npm run dev
+```
+
+**Instant HMR** - changes appear in < 100ms!
+
+### Option 2: Docker Development (Optimized)
+
+Use the optimized local development compose file:
+
+```bash
+# Start with optimized file watching
+docker-compose -f docker-compose.local.yml up --build
+
+# Slidev: http://localhost:3030
+# Editor: http://localhost:3000
+```
+
+### Option 3: Docker Combined Container (Production-like)
+
+```bash
+# Start the combined container (like Railway)
 docker-compose up --build
 
 # Editor available at: http://localhost:3000
@@ -81,6 +112,17 @@ docker-compose up --build
 ```
 
 Open http://localhost:3000 to use the editor.
+
+### File Watching Performance
+
+The development setup uses native file system events (inotify on Linux) for **instant HMR**. 
+
+If you're on **Windows/macOS with Docker Desktop**, you may need to enable polling:
+
+```bash
+# For Docker Desktop (Windows/macOS) - slower but necessary
+CHOKIDAR_USEPOLLING=true docker-compose up --build
+```
 
 ## Deployment to Railway
 
@@ -174,6 +216,26 @@ npm run dev
 Note: When running separately, you'll need to update `SLIDEV_URL` in the editor to point to the Slidev server.
 
 ## Troubleshooting
+
+### Slow rebuilds / HMR not working ⚠️
+
+If changes take a long time to appear (10+ seconds), check:
+
+1. **File watching mode**: 
+   - On **Linux**: Should use `inotify` (instant). Ensure `CHOKIDAR_USEPOLLING=false`
+   - On **Docker Desktop (Windows/macOS)**: Must use polling. Set `CHOKIDAR_USEPOLLING=true`
+
+2. **Full restart vs HMR**:
+   - If you see `restarting on config change...` in logs, Slidev is doing a **full restart**
+   - This happens when you edit the frontmatter (first `---` block) of your slides
+   - **Content-only edits** should use fast HMR without restart
+
+3. **Best solution**: Run Slidev **natively** for fastest HMR:
+   ```bash
+   cd presentation && npm run dev:local
+   ```
+
+4. **Volume mounts**: Use `docker-compose.local.yml` which mounts the entire folder for better performance
 
 ### Preview not loading (blank screen)
 

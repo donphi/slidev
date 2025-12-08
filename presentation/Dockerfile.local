@@ -1,0 +1,28 @@
+# Lightweight Dockerfile for LOCAL DEVELOPMENT with fast HMR
+# For production, use the main Dockerfile.railway
+
+FROM node:20-slim
+
+# Install tini for proper signal handling
+RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy only package files first (for better layer caching)
+COPY package.json ./
+
+# Install dependencies
+RUN npm install
+
+# Note: In docker-compose.local.yml, we mount the entire presentation folder
+# This means changes are instantly available without rebuilds
+
+# Expose Slidev port
+EXPOSE 3030
+
+# Use tini as entrypoint for proper signal handling
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Start Slidev dev server with remote access enabled
+CMD ["npm", "run", "dev"]
+
