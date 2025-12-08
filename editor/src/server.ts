@@ -461,11 +461,29 @@ app.post('/api/history/restore/:id', async (req: Request, res: Response) => {
 const STYLE_PATH = path.join(PRESENTATION_DIR, 'style.css');
 
 // Get default theme content from file
-const getDefaultTheme = () => {
+const getDefaultTheme = (): string => {
+  console.log('🎨 Loading default theme from:', STYLE_PATH);
+  console.log('   File exists:', existsSync(STYLE_PATH));
+  
   if (existsSync(STYLE_PATH)) {
-    return readFileSync(STYLE_PATH, 'utf-8');
+    try {
+      const content = readFileSync(STYLE_PATH, 'utf-8');
+      console.log('   Content length:', content.length, 'chars');
+      return content;
+    } catch (err) {
+      console.error('   Error reading style.css:', err);
+    }
+  } else {
+    // List directory contents for debugging
+    try {
+      const files = readdirSync(PRESENTATION_DIR);
+      console.log('   Files in directory:', files.join(', '));
+    } catch (e) {
+      console.log('   Could not list directory');
+    }
   }
-  return '/* Default theme */';
+  
+  return '/* Default theme - style.css not found */';
 };
 
 // API: List all themes
@@ -626,51 +644,111 @@ app.get('/api/themes/current', async (req: Request, res: Response) => {
 const PDF_PATH = path.join(PRESENTATION_DIR, 'slides-export.pdf');
 let exportInProgress = false;
 
+// Helper to find the exported PDF (Sli.dev may use different names)
+const findExportedPdf = (): string | null => {
+  // Check common export filenames
+  const possibleNames = ['slides-export.pdf', 'export.pdf', 'slides.pdf'];
+  
+  for (const name of possibleNames) {
+    const pdfPath = path.join(PRESENTATION_DIR, name);
+    if (existsSync(pdfPath)) {
+      return pdfPath;
+    }
+  }
+  
+  // Also check for any .pdf file in the directory
+  try {
+    const files = readdirSync(PRESENTATION_DIR);
+    const pdfFile = files.find(f => f.endsWith('.pdf'));
+    if (pdfFile) {
+      return path.join(PRESENTATION_DIR, pdfFile);
+    }
+  } catch (e) {
+    // Ignore
+  }
+  
+  return null;
+};
+
 // API: Export to PDF
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
-    return res.status(409).json({ error: 'Export already in progress' });
+    return res.status(409).json({ error: 'Export already in progress. Please wait.' });
   }
   
   exportInProgress = true;
-  console.log('Starting PDF export...');
+  console.log('📄 Starting PDF export...');
+  console.log(`   Working directory: ${PRESENTATION_DIR}`);
+  console.log(`   Expected output: ${PDF_PATH}`);
   
   try {
-    // Run slidev export command
-    const exportCmd = `cd ${PRESENTATION_DIR} && npm run export`;
+    // Run slidev export command using promise wrapper
+    const exportCmd = `cd ${PRESENTATION_DIR} && npm run export 2>&1`;
     
-    exec(exportCmd, { timeout: 120000 }, (error, stdout, stderr) => {
-      exportInProgress = false;
-      
-      if (error) {
-        console.error('Export error:', error);
-        console.error('stderr:', stderr);
-        return res.status(500).json({ error: 'Export failed', details: stderr });
-      }
-      
-      console.log('Export completed:', stdout);
-      
-      // Check if PDF was created
-      if (existsSync(PDF_PATH)) {
-        res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
-      } else {
-        res.status(500).json({ error: 'PDF file not created' });
-      }
+    const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+      exec(exportCmd, { timeout: 180000 }, (error, stdout, stderr) => {
+        if (error) {
+          reject({ error, stdout, stderr });
+        } else {
+          resolve({ stdout, stderr });
+        }
+      });
     });
-  } catch (err) {
+    
+    console.log('📄 Export command completed');
+    console.log('   stdout:', result.stdout.slice(0, 500));
+    
+    // Check if PDF was created
+    const createdPdf = findExportedPdf();
+    if (createdPdf) {
+      exportInProgress = false;
+      console.log('✅ PDF file created:', createdPdf);
+      res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
+    } else {
+      exportInProgress = false;
+      console.error('❌ No PDF file found in:', PRESENTATION_DIR);
+      // List directory contents for debugging
+      try {
+        const files = readdirSync(PRESENTATION_DIR);
+        console.error('   Directory contents:', files.join(', '));
+      } catch (e) { /* ignore */ }
+      res.status(500).json({ error: 'PDF file not created. Export may have completed but file is missing.' });
+    }
+  } catch (err: any) {
     exportInProgress = false;
-    console.error('Export error:', err);
-    res.status(500).json({ error: 'Export failed' });
+    const errorMsg = err?.error?.message || err?.message || 'Unknown error';
+    const stdout = err?.stdout || '';
+    const stderr = err?.stderr || '';
+    
+    console.error('❌ Export failed:', errorMsg);
+    console.error('   stdout:', stdout.slice(0, 500));
+    console.error('   stderr:', stderr.slice(0, 500));
+    
+    // Provide helpful error message
+    let userMessage = 'Export failed';
+    if (stderr.includes('playwright') || stderr.includes('chromium')) {
+      userMessage = 'Export failed: Chromium browser issue. Try again or check server logs.';
+    } else if (stderr.includes('timeout')) {
+      userMessage = 'Export timed out. The presentation may be too large.';
+    } else if (stdout.includes('error') || stderr.includes('error')) {
+      userMessage = `Export failed: ${stderr.slice(0, 200) || stdout.slice(0, 200)}`;
+    }
+    
+    res.status(500).json({ error: userMessage });
   }
 });
 
 // API: Download exported PDF
 app.get('/api/export/download', (_req: Request, res: Response) => {
-  if (!existsSync(PDF_PATH)) {
+  const pdfPath = findExportedPdf();
+  
+  if (!pdfPath) {
     return res.status(404).json({ error: 'No PDF available. Run export first.' });
   }
   
-  res.download(PDF_PATH, 'slides.pdf', (err) => {
+  console.log('📥 Downloading PDF from:', pdfPath);
+  
+  res.download(pdfPath, 'presentation.pdf', (err) => {
     if (err) {
       console.error('Download error:', err);
     }
@@ -679,10 +757,11 @@ app.get('/api/export/download', (_req: Request, res: Response) => {
 
 // API: Check export status
 app.get('/api/export/status', (_req: Request, res: Response) => {
+  const pdfPath = findExportedPdf();
   res.json({
     inProgress: exportInProgress,
-    pdfAvailable: existsSync(PDF_PATH),
-    pdfPath: PDF_PATH
+    pdfAvailable: !!pdfPath,
+    pdfPath: pdfPath || null
   });
 });
 
@@ -700,6 +779,13 @@ app.get('*', (_req: Request, res: Response) => {
 // START SERVER
 // ==========================================
 const start = async () => {
+  // Log paths for debugging
+  console.log('📂 Path Configuration:');
+  console.log(`   SLIDES_PATH: ${SLIDES_PATH}`);
+  console.log(`   PRESENTATION_DIR: ${PRESENTATION_DIR}`);
+  console.log(`   STYLE_PATH: ${STYLE_PATH}`);
+  console.log(`   style.css exists: ${existsSync(STYLE_PATH)}`);
+  
   await initDatabase();
   
   app.listen(PORT, () => {
