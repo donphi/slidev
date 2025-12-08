@@ -45,15 +45,19 @@ RUN npm run build
 COPY editor/public ./dist/public
 
 # ==========================================
+# BACKUP DEFAULT FILES
+# These are safe copies that won't be affected by volume mounts
+# ==========================================
+RUN mkdir -p /app/presentation-backup && \
+    cp /app/presentation/slides.md /app/presentation-backup/slides.md && \
+    cp /app/presentation/style.css /app/presentation-backup/style.css
+
+# ==========================================
 # USER DATA DIRECTORY
 # This is where Railway volume should mount
 # Only contains user-editable files (small!)
 # ==========================================
 RUN mkdir -p /app/userdata
-
-# Copy default user files
-RUN cp /app/presentation/slides.md /app/userdata/slides.md && \
-    cp /app/presentation/style.css /app/userdata/style.css
 
 # ==========================================
 # STARTUP
@@ -71,26 +75,46 @@ echo "========================================"\n\
 echo "Sli.dev Editor - Railway Deployment"\n\
 echo "========================================"\n\
 \n\
-# Ensure userdata directory has default files\n\
-echo "Checking user data..."\n\
+# Clean up any broken symlinks in userdata (from previous failed runs)\n\
+echo "Checking user data directory..."\n\
+if [ -L /app/userdata/slides.md ] && [ ! -e /app/userdata/slides.md ]; then\n\
+  echo "Removing broken symlink: slides.md"\n\
+  rm -f /app/userdata/slides.md\n\
+fi\n\
+if [ -L /app/userdata/style.css ] && [ ! -e /app/userdata/style.css ]; then\n\
+  echo "Removing broken symlink: style.css"\n\
+  rm -f /app/userdata/style.css\n\
+fi\n\
+\n\
+# Also clean up if they are symlinks pointing to themselves (circular)\n\
+if [ -L /app/userdata/slides.md ]; then\n\
+  echo "Removing symlink in userdata (should be regular file): slides.md"\n\
+  rm -f /app/userdata/slides.md\n\
+fi\n\
+if [ -L /app/userdata/style.css ]; then\n\
+  echo "Removing symlink in userdata (should be regular file): style.css"\n\
+  rm -f /app/userdata/style.css\n\
+fi\n\
+\n\
+# Ensure userdata has the actual files (not symlinks)\n\
 if [ ! -f /app/userdata/slides.md ]; then\n\
   echo "Creating default slides.md..."\n\
-  cp /app/presentation/slides.md /app/userdata/slides.md\n\
+  cp /app/presentation-backup/slides.md /app/userdata/slides.md\n\
 fi\n\
 if [ ! -f /app/userdata/style.css ]; then\n\
   echo "Creating default style.css..."\n\
-  cp /app/presentation/style.css /app/userdata/style.css\n\
+  cp /app/presentation-backup/style.css /app/userdata/style.css\n\
 fi\n\
 \n\
 # Create symlinks from presentation dir to userdata\n\
-# This way Sli.dev uses the user-edited files from the volume\n\
-echo "Linking user data to presentation..."\n\
-rm -f /app/presentation/slides.md\n\
-rm -f /app/presentation/style.css\n\
+echo "Linking presentation to user data..."\n\
+rm -f /app/presentation/slides.md 2>/dev/null || true\n\
+rm -f /app/presentation/style.css 2>/dev/null || true\n\
 ln -sf /app/userdata/slides.md /app/presentation/slides.md\n\
 ln -sf /app/userdata/style.css /app/presentation/style.css\n\
 \n\
-echo "User data directory contents:"\n\
+echo ""\n\
+echo "User data contents:"\n\
 ls -la /app/userdata/\n\
 echo ""\n\
 echo "Presentation symlinks:"\n\
@@ -98,25 +122,23 @@ ls -la /app/presentation/slides.md /app/presentation/style.css\n\
 \n\
 echo "========================================"\n\
 echo "Starting services..."\n\
-echo "Editor will run on port: $PORT"\n\
+echo "Editor: port $PORT"\n\
+echo "Sli.dev: port 3030 (internal)"\n\
 echo "========================================"\n\
 \n\
-# Start Sli.dev in background from presentation dir (has node_modules)\n\
+# Start Sli.dev in background\n\
 cd /app/presentation && NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
 SLIDEV_PID=$!\n\
 \n\
-# Wait for Sli.dev to be ready\n\
 echo "Waiting for Sli.dev to start..."\n\
 sleep 5\n\
 \n\
-# Check if Sli.dev started\n\
 if ! kill -0 $SLIDEV_PID 2>/dev/null; then\n\
-  echo "WARNING: Sli.dev may have failed to start. Check /tmp/slidev.log"\n\
+  echo "WARNING: Sli.dev may have failed. Log:"\n\
   cat /tmp/slidev.log | tail -20\n\
 fi\n\
 \n\
-# Start Editor in foreground\n\
-echo "Starting Editor on port $PORT"\n\
+echo "Starting Editor..."\n\
 cd /app/editor && exec npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
