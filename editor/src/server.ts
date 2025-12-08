@@ -231,17 +231,19 @@ app.use('/slidev', createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
   ws: true,  // Enable WebSocket proxy for HMR
-  // Express strips the `/slidev` prefix before the proxy sees the request,
-  // so we add it back to keep Slidev's base path working.
+  // Express removes the mount path before forwarding. Ensure Slidev's base path
+  // (`/slidev`) is always present without duplicating it.
   pathRewrite: (path) => {
     if (!path || path === '/') return '/slidev/';
-    return `/slidev${path}`;
+    return path.startsWith('/slidev') ? path : `/slidev${path}`;
   },
   on: {
     proxyReq: (proxyReq, req) => {
-      const originalPath = req.url || '/';
-      const proxiedPath = originalPath === '/' ? '/slidev/' : `/slidev${originalPath}`;
-      console.log(`🔀 Proxy: ${req.method} /slidev${originalPath} -> ${SLIDEV_URL}${proxiedPath}`);
+      const originalPath = req.originalUrl || req.url || '/';
+      const finalPath = (proxyReq.path || '').startsWith('/')
+        ? proxyReq.path
+        : `/${proxyReq.path}`;
+      console.log(`🔀 Proxy: ${req.method} ${originalPath} -> ${SLIDEV_URL}${finalPath}`);
     },
     error: (err) => {
       console.error('❌ Proxy error:', err.message);
@@ -734,6 +736,8 @@ app.post('/api/export', async (_req: Request, res: Response) => {
           ...process.env,
           // Playwright container-safe environment variables
           PLAYWRIGHT_BROWSERS_PATH: '/ms-playwright',
+          // Force default base for export so Slidev doesn't expect /slidev/ prefix
+          SLIDEV_BASE: '/',
         }
       }, (error, stdout, stderr) => {
         if (error) {

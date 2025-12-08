@@ -134,7 +134,7 @@ echo "Sli.dev: port 3030 (internal)"\n\
 echo "========================================"\n\
 \n\
 # Start Sli.dev in background\n\
-cd /app/presentation && NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
+cd /app/presentation && SLIDEV_BASE=/slidev/ NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
 SLIDEV_PID=$!\n\
 \n\
 echo "Waiting for Sli.dev to start..."\n\

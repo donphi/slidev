@@ -1,15 +1,19 @@
 import { defineConfig } from 'vite'
 
+const normalizeBase = (value: string | undefined) => {
+  if (!value || value === '/') return '/'
+  let base = value
+  if (!base.startsWith('/')) base = `/${base}`
+  if (!base.endsWith('/')) base = `${base}/`
+  return base
+}
+
 export default defineConfig({
-  // Base path for assets - ensures all asset URLs start with /slidev/
-  base: '/slidev/',
+  // Allow overriding base path via SLIDEV_BASE to support proxied deployments.
+  base: normalizeBase(process.env.SLIDEV_BASE),
   server: {
-    // Allow all hosts (needed for Railway/Docker deployment)
     allowedHosts: true,
-    // Allow connections from any IP
     host: '0.0.0.0',
-    // Don't redirect if base path is wrong - just serve content
     strictPort: true,
   },
 })
-
