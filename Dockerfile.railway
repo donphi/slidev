@@ -1,0 +1,70 @@
+# Combined Dockerfile for Railway deployment
+# Runs both Sli.dev and Editor in a single container
+
+FROM node:20
+
+WORKDIR /app
+
+# Install process manager for running multiple services
+RUN npm install -g concurrently
+
+# ==========================================
+# PRESENTATION (Sli.dev)
+# ==========================================
+WORKDIR /app/presentation
+
+# Copy and install presentation dependencies
+COPY presentation/package.json ./
+RUN npm install
+
+# Install Playwright for PDF export
+RUN npx playwright install --with-deps chromium
+
+# Copy presentation files
+COPY presentation/ ./
+
+# ==========================================
+# EDITOR
+# ==========================================
+WORKDIR /app/editor
+
+# Copy and install editor dependencies
+COPY editor/package.json ./
+RUN npm install
+
+# Copy editor source and build
+COPY editor/tsconfig.json ./
+COPY editor/src ./src
+RUN npm run build
+
+# Copy frontend files
+COPY editor/public ./dist/public
+
+# ==========================================
+# STARTUP
+# ==========================================
+WORKDIR /app
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+cd /app/presentation && npm run dev &\n\
+cd /app/editor && npm start &\n\
+wait' > /app/start.sh && chmod +x /app/start.sh
+
+# Expose both ports
+EXPOSE 3000 3030
+
+# Environment variables
+ENV PORT=3000
+ENV SLIDES_PATH=/app/presentation/slides.md
+ENV SLIDEV_URL=http://localhost:3030
+ENV CHOKIDAR_USEPOLLING=true
+# EDITOR_PASSWORD should be set in Railway dashboard (not hardcoded here)
+
+# Health check on editor port
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Start both services
+CMD ["/app/start.sh"]
+

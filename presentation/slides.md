@@ -31,7 +31,7 @@ background: /img/background.png
 
 ### Everyone knows management matters. No one systematically measures it.
 
-- Every investor says "we back great management teams"
+- Every investor says "we back great management team"
 - No one has a repeatable, quantitative framework to identify them
 - We built one, and it generates alpha
 

@@ -1,5 +1,5 @@
 {
-  "name": "slidev-docker-project",
+  "name": "slidev-presentation",
   "private": true,
   "scripts": {
     "dev": "slidev --remote",
@@ -13,3 +13,4 @@
     "vue": "^3.4.0"
   }
 }
+

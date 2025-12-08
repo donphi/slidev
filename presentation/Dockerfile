@@ -15,5 +15,10 @@ COPY . .
 # Expose the default Slidev port
 EXPOSE 3030
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3030', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
 # Start the application
 CMD ["npm", "run", "dev"]
+

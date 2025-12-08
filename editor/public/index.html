@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sli.dev Editor</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#1a1f2e',
+              950: '#0d1117'
+            }
+          },
+          fontFamily: {
+            mono: ['Fira Code', 'Monaco', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Monaco Editor -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.css">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    
+    /* Smooth transitions */
+    .transition-smooth { transition: all 0.2s ease; }
+    
+    /* Resizer grab effect */
+    .resizer:active { background: #3b82f6 !important; }
+    
+    /* Loading spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased">
+  <div id="app" class="flex flex-col h-screen">
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">📊</span>
+          <h1 class="text-lg font-semibold text-white">Sli.dev Editor</h1>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded">Live</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <!-- Save Button -->
+        <button id="btn-save" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-smooth">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+          <span>Save</span>
+          <kbd class="hidden sm:inline-block px-1.5 py-0.5 text-xs bg-blue-700 rounded">⌘S</kbd>
+        </button>
+        
+        <!-- Export PDF -->
+        <button id="btn-export" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg transition-smooth">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span>Export PDF</span>
+        </button>
+        
+        <!-- Download MD -->
+        <button id="btn-download" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-white transition-smooth">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span class="hidden sm:inline">Download</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex flex-1 overflow-hidden">
+      
+      <!-- Editor Panel -->
+      <div id="editor-panel" class="flex flex-col bg-slate-950" style="width: 45%;">
+        <div class="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="text-sm text-slate-400">slides.md</span>
+          </div>
+          <div id="status" class="flex items-center gap-2 text-xs">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <span class="text-slate-400">Ready</span>
+          </div>
+        </div>
+        <div id="editor-container" class="flex-1"></div>
+      </div>
+
+      <!-- Resizer -->
+      <div id="resizer" class="w-1.5 bg-slate-800 hover:bg-blue-500 cursor-col-resize transition-smooth flex-shrink-0"></div>
+
+      <!-- Preview Panel -->
+      <div class="flex flex-col flex-1 bg-white">
+        <div class="flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+            <span class="text-sm text-slate-400">Preview</span>
+          </div>
+          <button id="btn-refresh" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded transition-smooth" title="Refresh Preview">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+        </div>
+        <iframe id="preview-frame" class="flex-1 w-full h-full border-0" src="about:blank"></iframe>
+      </div>
+    </main>
+
+    <!-- Footer Status Bar -->
+    <footer class="flex items-center justify-between px-4 py-1.5 bg-slate-900 border-t border-slate-800 text-xs text-slate-500">
+      <div class="flex items-center gap-4">
+        <span>Markdown</span>
+        <span id="cursor-position">Ln 1, Col 1</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="char-count">0 characters</span>
+        <span>UTF-8</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+  <script>
+    // Global state
+    let editor;
+    let slidevUrl = 'http://localhost:3030';
+    let isDirty = false;
+
+    // Initialize Monaco Editor
+    require.config({ 
+      paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }
+    });
+
+    require(['vs/editor/editor.main'], async function() {
+      // Fetch config
+      try {
+        const config = await fetch('/api/config').then(r => r.json());
+        slidevUrl = config.slidevUrl;
+      } catch (e) {
+        console.warn('Could not fetch config, using defaults');
+      }
+
+      // Load preview
+      document.getElementById('preview-frame').src = slidevUrl;
+
+      // Create Monaco editor
+      editor = monaco.editor.create(document.getElementById('editor-container'), {
+        value: '# Loading...',
+        language: 'markdown',
+        theme: 'vs-dark',
+        fontSize: 14,
+        fontFamily: "'Fira Code', monospace",
+        fontLigatures: true,
+        minimap: { enabled: true, scale: 1 },
+        wordWrap: 'on',
+        lineNumbers: 'on',
+        automaticLayout: true,
+        padding: { top: 16, bottom: 16 },
+        scrollBeyondLastLine: false,
+        renderWhitespace: 'selection',
+        bracketPairColorization: { enabled: true },
+        guides: { bracketPairs: true },
+        smoothScrolling: true,
+        cursorBlinking: 'smooth',
+        cursorSmoothCaretAnimation: 'on'
+      });
+
+      // Load slides content
+      await loadSlides();
+
+      // Track cursor position
+      editor.onDidChangeCursorPosition((e) => {
+        document.getElementById('cursor-position').textContent = 
+          `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      });
+
+      // Track content changes
+      editor.onDidChangeModelContent(() => {
+        isDirty = true;
+        const content = editor.getValue();
+        document.getElementById('char-count').textContent = `${content.length} characters`;
+        updateStatus('Modified', 'warning');
+      });
+
+      // Keyboard shortcut: Ctrl/Cmd + S
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveSlides);
+    });
+
+    // Load slides from API
+    async function loadSlides() {
+      try {
+        updateStatus('Loading...', 'loading');
+        const res = await fetch('/api/slides');
+        const data = await res.json();
+        
+        if (res.ok && data.content) {
+          editor.setValue(data.content);
+          isDirty = false;
+          document.getElementById('char-count').textContent = `${data.content.length} characters`;
+          updateStatus('Ready', 'success');
+        } else {
+          updateStatus('Failed to load', 'error');
+          console.error('Load error:', data);
+        }
+      } catch (err) {
+        updateStatus('Connection error', 'error');
+        console.error('Load error:', err);
+      }
+    }
+
+    // Save slides to API
+    async function saveSlides() {
+      try {
+        updateStatus('Saving...', 'loading');
+        const content = editor.getValue();
+        
+        const res = await fetch('/api/slides', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          isDirty = false;
+          updateStatus('Saved ✓', 'success');
+          
+          // Refresh preview after brief delay
+          setTimeout(() => {
+            refreshPreview();
+          }, 300);
+        } else {
+          updateStatus('Save failed', 'error');
+          console.error('Save error:', data);
+        }
+      } catch (err) {
+        updateStatus('Save error', 'error');
+        console.error('Save error:', err);
+      }
+    }
+
+    // Refresh preview iframe
+    function refreshPreview() {
+      const iframe = document.getElementById('preview-frame');
+      iframe.src = slidevUrl;
+    }
+
+    // Export to PDF (opens Sli.dev print mode)
+    function exportPdf() {
+      window.open(slidevUrl + '?print', '_blank');
+      updateStatus('PDF export opened', 'success');
+    }
+
+    // Download markdown file
+    function downloadMd() {
+      const content = editor.getValue();
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'slides.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      updateStatus('Downloaded', 'success');
+    }
+
+    // Update status indicator
+    function updateStatus(text, type) {
+      const statusEl = document.getElementById('status');
+      const colors = {
+        success: 'bg-emerald-500',
+        warning: 'bg-amber-500',
+        error: 'bg-red-500',
+        loading: 'bg-blue-500'
+      };
+      
+      statusEl.innerHTML = `
+        <span class="w-2 h-2 ${colors[type] || colors.success} rounded-full ${type === 'loading' ? 'spinner' : ''}"></span>
+        <span class="text-slate-400">${text}</span>
+      `;
+      
+      // Reset to ready after success
+      if (type === 'success' && text !== 'Ready') {
+        setTimeout(() => updateStatus('Ready', 'success'), 2000);
+      }
+    }
+
+    // Button event listeners
+    document.getElementById('btn-save').addEventListener('click', saveSlides);
+    document.getElementById('btn-export').addEventListener('click', exportPdf);
+    document.getElementById('btn-download').addEventListener('click', downloadMd);
+    document.getElementById('btn-refresh').addEventListener('click', refreshPreview);
+
+    // Resizable panels
+    const resizer = document.getElementById('resizer');
+    const editorPanel = document.getElementById('editor-panel');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      
+      const container = document.querySelector('main');
+      const containerRect = container.getBoundingClientRect();
+      const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      if (newWidth > 20 && newWidth < 80) {
+        editorPanel.style.width = newWidth + '%';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+
+    // Warn before leaving with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  </script>
+</body>
+</html>
+
