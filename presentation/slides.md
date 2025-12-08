@@ -1,6 +1,6 @@
-<!-- ==================== GLOBAL FRONTMATTER ==================== -->
 ---
 theme: default
+layout: intro
 background: /img/background.png
 highlighter: shiki
 lineNumbers: false
@@ -12,15 +12,9 @@ title: Board Assessment Management
 mdc: true
 ---
 
-<!-- ==================== SLIDE 1: Cover / Intro ==================== -->
----
-layout: intro
-background: /img/background.png
----
-
 # Board Assessment Management
 
-### Introduction & Capital Raise — December 2025
+## Introduction & Capital Raise — December 2025
 
 <p class="text-lg opacity-70 italic mt-8">Quantifying what everyone knows but no one measures</p>
 
@@ -29,7 +23,7 @@ background: /img/background.png
 
 # The Insight
 
-### Everyone knows management matters. No one systematically measures it.
+## Everyone knows management matters. No one systematically measures it.
 
 - Every investor says "we back great management team"
 - No one has a repeatable, quantitative framework to identify them
@@ -45,7 +39,7 @@ background: /img/background.png
 
 # Team & Advisors
 
-### Core Team
+## Core Team
 
 | Name | Role | Background |
 |------|------|------------|
@@ -55,7 +49,7 @@ background: /img/background.png
 
 <div class="spacer"></div>
 
-### Advisors
+## Advisors
 
 | Name | Role | Background |
 |------|------|------------|
@@ -73,14 +67,14 @@ background: /img/background.png
 
 # Investment Philosophy
 
-### Management drives outcomes. Everything else is derivative.
+## Management drives outcomes. Everything else is derivative.
 
 - Business fundamentals are the *result* of management decisions
 - Investment returns follow management quality
 - Yet the industry obsesses over the derivatives (financials, price action) while treating the primary driver as "qualitative"
 
 
-### What if you could score management systematically.
+## What if you could score management systematically.
 
 - Quantitative scoring of leadership qualities and characteristics
 - Formula-driven — removes emotional bias from allocation
@@ -91,7 +85,7 @@ background: /img/background.png
 
 # Investment Model
 
-### Management Scorcard
+## Management Scorcard
 
 | Factor | What it captures |
 |--------|------------------|
@@ -114,24 +108,24 @@ background: /img/background.png
 
 # Investment Strategy
 
-### First Principles Execution
+## First Principles Execution
 
 <style scoped>
 p, li { font-size: 0.875rem !important; }
 ul { margin-bottom: 1.2rem !important; }  /* Space after bullet list - before next heading */
-h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
+h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 </style>
 
-## What we do:
+### What we do:
 - Focus *only* on management — no reliance on company fundamentals or market price data
 - Allocate capital systematically to highest-scoring management teams
 - Model runs quarterly with annual rebalancing (plus ad-hoc for major executive changes)
 
-## Target performance:
+### Target performance:
 - BAM Core: S&P 500 + 300 bps (lower active risk)
 - BAM Unconstrained: S&P 500 + 1,000 bps (higher active risk)
 
-## Discipline:
+### Discipline:
 - Benchmark as base — we optimize, not rebuild from scratch
 - Active allocation within defined risk parameters
 - Unemotional execution — scores determine allocation, not conviction
@@ -152,7 +146,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Technical Infrastructure
 
-### Built for scale, auditability, and reproducibility
+## Built for scale, auditability, and reproducibility
 
 <div class="table-sm">
 
@@ -168,7 +162,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 </div>
 <br>
 
-## Data sources:
+### Data sources:
 
 <div class="table-sm">
 
@@ -187,7 +181,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Concept Validation
 
-### 20-year backtest on S&P 500 data
+## 20-year backtest on S&P 500 data
 
 | Metric | Value |
 |--------|-------|
@@ -197,7 +191,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Market coverage | 93% (~800 companies over 20 years) |
 | Rebalancing | Annual |
 
-## Results preview:
+### Results preview:
 
 | Strategy | Return |
 |----------|-------|
@@ -209,13 +203,13 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Backtest Methodology
 
-### Point-in-time integrity
+## Point-in-time integrity
 
 - Individual scores calculated annually using only filings available at each calculation date
 - No lookahead bias — every backtest decision uses historical information only
 - 93% market coverage (~800 companies across 20-year period)
 
-## Validation rigor:
+### Validation rigor:
 
 | Element | Approach |
 |---------|----------|
@@ -234,7 +228,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Score Distribution
 
-### Score distribution across S&P 500 universe
+## Score distribution across S&P 500 universe
 
 <div class="chart-container">
   <!-- This is a placeholder for a real chart using a library like Chart.js or ECharts -->
@@ -252,14 +246,14 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Core Strategy
 
-### BAM Core: Sector-Aligned Alpha
+## BAM Core: Sector-Aligned Alpha
 
-## Strategy
+### Strategy
 - Invests in top 20% of management scores *within each sector* (~85 companies)
 - Maintains sector alignment with S&P 500 benchmark
 - Lower tracking error, institutional-friendly risk profile
 
-## Characteristics
+### Characteristics
 
 | Attribute | BAM Core |
 |-----------|----------|
@@ -274,7 +268,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Core Metrics
 
-### BAM Core: 20-Year Backtest Results (June 2025)
+## BAM Core: 20-Year Backtest Results (June 2025)
 
 | Metric | BAM Core | S&P 500 |
 |--------|:--------:|:-------:|
@@ -295,7 +289,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Core Performance
 
-### BAM Core: Annual Performance
+## BAM Core: Annual Performance
 
 <div class="table-xs">
 
@@ -337,13 +331,13 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 <br>
 
-## Live Model: October 2025
+### Live Model: October 2025
 
 <BamLiveTable />
 
 <br>
 
-## Live Performance:
+### Live Performance:
 
 <div class="table-xs">
 
@@ -359,14 +353,14 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Unconstrained Strategy
 
-### BAM Unconstrained: Concentrated Alpha
+## BAM Unconstrained: Concentrated Alpha
 
-## Strategy
+### Strategy
 - Invests in top 20 management scores across entire universe — no sector constraints
 - Higher conviction, higher volatility, higher target return
 - For investors with appetite for active risk
 
-## Characteristics
+### Characteristics
 
 | Attribute | BAM Unconstrained |
 |-----------|-------------------|
@@ -381,7 +375,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Unconstrained Metrics
 
-### BAM Unconstrained: 20-Year Backtest Results
+## BAM Unconstrained: 20-Year Backtest Results
 
 | Metric | BAM UC | S&P 500 |
 |--------|:------:|:-------:|
@@ -402,7 +396,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Unconstrained Performance
 
-### BAM Unconstrained: Annual Performance
+## BAM Unconstrained: Annual Performance
 
 <div class="table-xs">
 
@@ -436,15 +430,15 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Unconstrained Live Model
 
-### BAM Unconstrained: October 2025
+## BAM Unconstrained: October 2025
 
-## Top 10 Holdings:
+### Top 10 Holdings:
 
 <BamUnLiveTable />
 
 <br>
 
-## Live Performance:
+### Live Performance:
 
 <div class="table-xs">
 
@@ -460,14 +454,14 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Risk Management
 
-### Disciplined Risk Framework
+## Disciplined Risk Framework
 
-## Philosophy:
+### Philosophy:
 - Start with benchmark as base — optimize, don't reinvent
 - Target alpha while minimizing downside volatility
 - Continuous quality control at every pipeline stage
 
-## Controls:
+### Controls:
 
 <div class="table-sm">
 
@@ -492,7 +486,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Initial Product
 
-### BAM Core Fund
+## BAM Core Fund
 
 | Item | Detail |
 |------|--------|
@@ -508,7 +502,7 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Business Opportunity
 
-### Why Now, Why Us
+## Why Now, Why Us
 
 **The opportunity:**
 - S&P 500 market cap: $60 trillion
@@ -527,14 +521,14 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Principles & Vision
 
-### Building a Global Quantitative Manager
+## Building a Global Quantitative Manager
 
-## Principles:
+### Principles:
 - Best people, best technology
 - First-principles investment philosophy
 - High-quality, alpha-generating products
 
-## Vision:
+### Vision:
 - Global product range: 5-10 funds covering major benchmarks
 - Client base: Institutional pension funds, sovereign wealth funds
 - **Target AUM: $1 billion by 2030**
@@ -544,14 +538,14 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Business Structure
 
-### Corporate Setup
+## Corporate Setup
 
 | Entity | Role |
 |--------|------|
 | Board Assessment Management (Pty) Ltd | Operating company, IP holder |
 | Anomaly Capital (Pty) Ltd | FSP II-A license holder, Johan Barkhuysen (100%) |
 
-## Current Shareholders:
+### Current Shareholders:
 - Anomaly Capital: 95%
 - Francois Dercksen: 5%
 
@@ -565,16 +559,16 @@ h2 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Capital Raise
 
-### Investment Opportunity
+## Investment Opportunity
 
-## Raise: 
+### Raise: 
 R10 million capital + R500 million initial AUM commitment
 
-## Terms:
+### Terms:
 - 25% equity for R10m capital + R500m AUM commitment
 - Ideally 3-5 investors at ~5% each
 
-## Use of funds (two tranches):
+### Use of funds (two tranches):
 
 | Tranche | Amount | Timing | Purpose |
 |---------|--------|--------|---------|
@@ -588,7 +582,7 @@ R10 million capital + R500 million initial AUM commitment
 
 # Shareholding
 
-### Ownership Structure
+## Ownership Structure
 
 | Shareholder | Pre-Raise | Post-Raise |
 |-------------|:---------:|:----------:|
@@ -602,7 +596,7 @@ R10 million capital + R500 million initial AUM commitment
 
 # Budget
 
-### Budget Summary (R'm)
+## Budget Summary (R'm)
 
 <BudgetTable />
 
@@ -611,7 +605,7 @@ R10 million capital + R500 million initial AUM commitment
 
 # Budget
 
-### Assumptions
+## Assumptions
 
 <div class="table-xs">
 
@@ -640,7 +634,7 @@ R10 million capital + R500 million initial AUM commitment
 
 # Timeline
 
-### Path to Launch
+## Path to Launch
 
 | Milestone | Target |
 |-----------|--------|
