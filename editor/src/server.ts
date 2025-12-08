@@ -881,7 +881,7 @@ const start = async () => {
   // Handle WebSocket upgrade for Vite HMR (needed for export page to load)
   server.on('upgrade', (req, socket, head) => {
     if (req.url?.startsWith('/slidev')) {
-      slidevProxy.upgrade(req, socket, head);
+      slidevProxy.upgrade(req, socket as any, head);
     }
   });
   
