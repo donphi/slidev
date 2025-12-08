@@ -1,9 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync, statSync } from 'fs';
 import path from 'path';
 import { Pool } from 'pg';
-import { exec } from 'child_process';
+import puppeteer from 'puppeteer-core';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -675,8 +675,26 @@ const findExportedPdf = (): string | null => {
   return null;
 };
 
-// API: Export to PDF using WeasyPrint
-// WeasyPrint converts HTML to PDF - reliable in containers, no browser sandbox issues
+// Get Chromium executable path (system chromium in container, or detect local)
+const getChromiumPath = (): string => {
+  // Container path (set via ENV in Dockerfile)
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  // Common Linux paths
+  const linuxPaths = ['/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome'];
+  for (const p of linuxPaths) {
+    if (existsSync(p)) return p;
+  }
+  // macOS
+  const macPath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  if (existsSync(macPath)) return macPath;
+  // Default fallback
+  return '/usr/bin/chromium';
+};
+
+// API: Export to PDF using Puppeteer (headless Chrome)
+// This renders the actual Vue.js content exactly as seen in the browser
 app.post('/api/export', async (_req: Request, res: Response) => {
   if (exportInProgress) {
     return res.status(409).json({ error: 'Export already in progress. Please wait.' });
@@ -685,42 +703,78 @@ app.post('/api/export', async (_req: Request, res: Response) => {
   exportInProgress = true;
   const outputPath = path.join(SLIDEV_DIR, 'slides-export.pdf');
   
-  console.log('📄 Starting PDF export with WeasyPrint...');
+  console.log('📄 Starting PDF export with Puppeteer...');
   console.log(`   Source: ${SLIDEV_URL}/?print`);
   console.log(`   Output: ${outputPath}`);
+  console.log(`   Chromium: ${getChromiumPath()}`);
+  
+  let browser = null;
   
   try {
-    // Use WeasyPrint to convert Sli.dev's print view to PDF
-    // The ?print URL renders all slides in a print-friendly format
-    const printUrl = `${SLIDEV_URL}/?print`;
-    
-    // WeasyPrint command with optimizations for presentations
-    // -s A4 sets page size, --presentational-hints respects CSS
-    const exportCmd = `weasyprint "${printUrl}" "${outputPath}" --presentational-hints 2>&1`;
-    
-    console.log('   Running:', exportCmd);
-    
-    const result = await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
-      exec(exportCmd, { 
-        timeout: 120000, // 2 minutes should be plenty
-        env: process.env
-      }, (error, stdout, stderr) => {
-        if (error) {
-          reject({ error, stdout, stderr });
-        } else {
-          resolve({ stdout, stderr });
-        }
-      });
+    // Launch Chromium with container-safe flags
+    browser = await puppeteer.launch({
+      executablePath: getChromiumPath(),
+      headless: true,
+      args: [
+        '--no-sandbox',                    // Required for running as root in containers
+        '--disable-setuid-sandbox',        // Required for containers
+        '--disable-dev-shm-usage',         // Use /tmp instead of /dev/shm
+        '--disable-gpu',                   // Not needed in headless
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--no-first-run',
+        '--no-zygote',                     // Single process mode for containers
+        '--single-process',                // Helps with container stability
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--safebrowsing-disable-auto-update',
+      ],
     });
     
-    console.log('📄 WeasyPrint completed');
-    if (result.stdout) console.log('   stdout:', result.stdout);
-    if (result.stderr) console.log('   stderr:', result.stderr);
+    const page = await browser.newPage();
+    
+    // Set viewport to match presentation aspect ratio (16:9)
+    await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Navigate to Slidev's print view
+    const printUrl = `${SLIDEV_URL}/?print`;
+    console.log('   Navigating to:', printUrl);
+    
+    await page.goto(printUrl, { 
+      waitUntil: 'networkidle0',  // Wait for all network requests to finish
+      timeout: 60000              // 60 second timeout
+    });
+    
+    // Wait for slides to fully render
+    console.log('   Waiting for slides to render...');
+    await page.waitForSelector('.slidev-layout', { timeout: 30000 });
+    
+    // Additional wait for any animations/transitions to complete
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate PDF with presentation-optimized settings
+    console.log('   Generating PDF...');
+    await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      landscape: true,                    // Presentations are typically landscape
+      printBackground: true,              // Include background colors/images
+      preferCSSPageSize: true,            // Respect CSS @page rules if present
+      margin: { top: 0, right: 0, bottom: 0, left: 0 },
+    });
+    
+    await browser.close();
+    browser = null;
     
     // Check if PDF was created
     if (existsSync(outputPath)) {
       exportInProgress = false;
-      const stats = require('fs').statSync(outputPath);
+      const stats = statSync(outputPath);
       console.log(`✅ PDF created: ${outputPath} (${Math.round(stats.size / 1024)} KB)`);
       res.json({ success: true, message: 'PDF exported successfully', downloadUrl: '/api/export/download' });
     } else {
@@ -729,16 +783,16 @@ app.post('/api/export', async (_req: Request, res: Response) => {
       res.status(500).json({ error: 'PDF file not created. Check server logs.' });
     }
   } catch (err: any) {
+    if (browser) {
+      try { await browser.close(); } catch (e) { /* ignore */ }
+    }
     exportInProgress = false;
-    const errorMsg = err?.error?.message || err?.message || 'Unknown error';
-    const stdout = err?.stdout || '';
-    const stderr = err?.stderr || '';
+    const errorMsg = err?.message || 'Unknown error';
     
     console.error('❌ Export failed:', errorMsg);
-    if (stdout) console.error('   stdout:', stdout);
-    if (stderr) console.error('   stderr:', stderr);
+    console.error('   Stack:', err?.stack);
     
-    res.status(500).json({ error: `Export failed: ${stderr || stdout || errorMsg}`.slice(0, 300) });
+    res.status(500).json({ error: `Export failed: ${errorMsg}`.slice(0, 300) });
   }
 });
 
