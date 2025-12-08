@@ -133,20 +133,14 @@ echo "Editor: port $PORT"\n\
 echo "Sli.dev: port 3030 (internal)"\n\
 echo "========================================"\n\
 \n\
-# Start Sli.dev in background\n\
-cd /app/presentation && SLIDEV_BASE=/slidev/ NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
-SLIDEV_PID=$!\n\
-\n\
-echo "Waiting for Sli.dev to start..."\n\
-sleep 5\n\
-\n\
-if ! kill -0 $SLIDEV_PID 2>/dev/null; then\n\
-  echo "WARNING: Sli.dev may have failed. Log:"\n\
-  cat /tmp/slidev.log | tail -20\n\
-fi\n\
-\n\
-echo "Starting Editor..."\n\
-cd /app/editor && exec npm start\n\
+# Start both services with concurrently so we can see all output\n\
+# This shows Slidev startup/errors in the logs\n\
+exec concurrently \\\n\
+  --names "slidev,editor" \\\n\
+  --prefix "[{name}]" \\\n\
+  --prefix-colors "cyan,yellow" \\\n\
+  "cd /app/presentation && SLIDEV_BASE=/slidev/ npm run dev" \\\n\
+  "sleep 8 && cd /app/editor && npm start"\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Default environment variables
