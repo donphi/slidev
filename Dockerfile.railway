@@ -49,14 +49,27 @@ COPY editor/public ./dist/public
 WORKDIR /app
 
 # Create startup script that respects Railway's PORT variable
-# Sli.dev runs on internal port 3030 (not exposed)
-# Editor runs on $PORT (Railway assigns this, defaults to 3000)
+# IMPORTANT: Start Sli.dev in background SILENTLY so Railway doesn't detect port 3030
+# Editor runs on $PORT (Railway assigns this) - this is the exposed service
 RUN echo '#!/bin/bash\n\
-echo "Starting Sli.dev on internal port 3030..."\n\
-cd /app/presentation && npm run dev &\n\
-sleep 3\n\
-echo "Starting Editor on port ${PORT:-3000}..."\n\
-cd /app/editor && npm start\n\
+set -e\n\
+export PORT=${PORT:-3000}\n\
+echo "========================================"\n\
+echo "Starting services..."\n\
+echo "Editor will run on port: $PORT"\n\
+echo "========================================"\n\
+\n\
+# Start Sli.dev in background, redirect output to hide port 3030 from Railway\n\
+cd /app/presentation && npm run dev > /tmp/slidev.log 2>&1 &\n\
+SLIDEV_PID=$!\n\
+\n\
+# Wait for Sli.dev to be ready\n\
+echo "Waiting for Sli.dev to start..."\n\
+sleep 5\n\
+\n\
+# Start Editor in foreground (Railway will detect this port)\n\
+echo "Starting Editor on port $PORT"\n\
+cd /app/editor && exec npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
 # Railway will assign the port dynamically - don't hardcode EXPOSE
