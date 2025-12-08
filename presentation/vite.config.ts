@@ -15,20 +15,5 @@ export default defineConfig({
     allowedHosts: true,
     host: '0.0.0.0',
     strictPort: true,
-    // Allow serving files from node_modules (needed for export page)
-    fs: {
-      allow: ['..'],
-    },
-    // Configure HMR for proxied setup
-    hmr: {
-      // Use the same port as the server
-      port: 3030,
-      // Allow connections from proxy
-      host: '0.0.0.0',
-    },
-  },
-  // Optimize dependencies to ensure @slidev/client is properly bundled
-  optimizeDeps: {
-    include: ['@slidev/client'],
   },
 })
