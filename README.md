@@ -163,7 +163,7 @@ docker-compose up --build
 ### PDF export not working
 
 - Playwright/Chromium must be installed in the Sli.dev container
-- Use `docker-compose run slidev npm run export` for CLI export
+- Use `docker compose run slidev npm run export` for CLI export
 
 ## License
 

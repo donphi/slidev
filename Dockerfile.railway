@@ -12,11 +12,10 @@ WORKDIR /app
 RUN npm install -g concurrently
 
 # ==========================================
-# PRESENTATION TEMPLATE (built files)
-# We build to a template directory, then copy to presentation on first run
-# This allows Railway volumes to work while preserving built files
+# PRESENTATION (Sli.dev)
+# Built with all dependencies - runs from here
 # ==========================================
-WORKDIR /app/presentation-template
+WORKDIR /app/presentation
 
 # Copy and install presentation dependencies
 COPY presentation/package.json ./
@@ -46,14 +45,24 @@ RUN npm run build
 COPY editor/public ./dist/public
 
 # ==========================================
+# USER DATA DIRECTORY
+# This is where Railway volume should mount
+# Only contains user-editable files (small!)
+# ==========================================
+RUN mkdir -p /app/userdata
+
+# Copy default user files
+RUN cp /app/presentation/slides.md /app/userdata/slides.md && \
+    cp /app/presentation/style.css /app/userdata/style.css
+
+# ==========================================
 # STARTUP
 # ==========================================
 WORKDIR /app
 
-# Create startup script that:
-# 1. Ensures presentation directory has all required files (copies from template if needed)
-# 2. Starts Sli.dev in background
-# 3. Starts Editor in foreground
+# Create startup script
+# Key insight: Run Sli.dev from /app/presentation (with node_modules)
+# But symlink slides.md and style.css from /app/userdata (Railway volume)
 RUN echo '#!/bin/bash\n\
 set -e\n\
 export PORT=${PORT:-3000}\n\
@@ -62,40 +71,37 @@ echo "========================================"\n\
 echo "Sli.dev Editor - Railway Deployment"\n\
 echo "========================================"\n\
 \n\
-# Ensure presentation directory exists and has required files\n\
-echo "Checking presentation directory..."\n\
-mkdir -p /app/presentation\n\
-\n\
-# If package.json is missing, copy all template files\n\
-if [ ! -f /app/presentation/package.json ]; then\n\
-  echo "Initializing presentation directory from template..."\n\
-  cp -r /app/presentation-template/* /app/presentation/\n\
-  echo "Done! Presentation files initialized."\n\
-else\n\
-  echo "Presentation directory already initialized."\n\
-  # Still sync any missing static files (layouts, components, etc)\n\
-  # but preserve user-edited files (slides.md, style.css)\n\
-  for dir in layouts components styles public node_modules; do\n\
-    if [ -d /app/presentation-template/$dir ] && [ ! -d /app/presentation/$dir ]; then\n\
-      echo "Syncing missing directory: $dir"\n\
-      cp -r /app/presentation-template/$dir /app/presentation/\n\
-    fi\n\
-  done\n\
-  # Ensure package.json and config files are up to date\n\
-  cp /app/presentation-template/package.json /app/presentation/\n\
-  cp /app/presentation-template/vite.config.ts /app/presentation/ 2>/dev/null || true\n\
+# Ensure userdata directory has default files\n\
+echo "Checking user data..."\n\
+if [ ! -f /app/userdata/slides.md ]; then\n\
+  echo "Creating default slides.md..."\n\
+  cp /app/presentation/slides.md /app/userdata/slides.md\n\
+fi\n\
+if [ ! -f /app/userdata/style.css ]; then\n\
+  echo "Creating default style.css..."\n\
+  cp /app/presentation/style.css /app/userdata/style.css\n\
 fi\n\
 \n\
-# List what we have\n\
-echo "Presentation directory contents:"\n\
-ls -la /app/presentation/\n\
+# Create symlinks from presentation dir to userdata\n\
+# This way Sli.dev uses the user-edited files from the volume\n\
+echo "Linking user data to presentation..."\n\
+rm -f /app/presentation/slides.md\n\
+rm -f /app/presentation/style.css\n\
+ln -sf /app/userdata/slides.md /app/presentation/slides.md\n\
+ln -sf /app/userdata/style.css /app/presentation/style.css\n\
+\n\
+echo "User data directory contents:"\n\
+ls -la /app/userdata/\n\
+echo ""\n\
+echo "Presentation symlinks:"\n\
+ls -la /app/presentation/slides.md /app/presentation/style.css\n\
 \n\
 echo "========================================"\n\
 echo "Starting services..."\n\
 echo "Editor will run on port: $PORT"\n\
 echo "========================================"\n\
 \n\
-# Start Sli.dev in background, redirect output to hide port 3030 from Railway\n\
+# Start Sli.dev in background from presentation dir (has node_modules)\n\
 cd /app/presentation && NODE_NO_WARNINGS=1 npm run dev > /tmp/slidev.log 2>&1 &\n\
 SLIDEV_PID=$!\n\
 \n\
@@ -109,24 +115,22 @@ if ! kill -0 $SLIDEV_PID 2>/dev/null; then\n\
   cat /tmp/slidev.log | tail -20\n\
 fi\n\
 \n\
-# Start Editor in foreground (Railway will detect this port)\n\
+# Start Editor in foreground\n\
 echo "Starting Editor on port $PORT"\n\
 cd /app/editor && exec npm start\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
-# Railway will assign the port dynamically - don't hardcode EXPOSE
-# The editor reads PORT from environment
-
-# Default environment variables (Railway overrides PORT)
-ENV SLIDES_PATH=/app/presentation/slides.md
+# Default environment variables
+# IMPORTANT: Point to userdata for editor, but presentation still runs from /app/presentation
+ENV SLIDES_PATH=/app/userdata/slides.md
+ENV STYLE_PATH=/app/userdata/style.css
 ENV SLIDEV_URL=http://localhost:3030
 ENV CHOKIDAR_USEPOLLING=true
 ENV NODE_NO_WARNINGS=1
-# EDITOR_PASSWORD and MAX_HISTORY should be set in Railway dashboard
 
-# Health check uses the PORT environment variable
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
   CMD curl -f http://localhost:${PORT:-3000}/api/health || exit 1
 
-# Start both services (editor in foreground to keep container alive)
+# Start both services
 CMD ["/app/start.sh"]

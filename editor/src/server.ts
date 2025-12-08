@@ -458,7 +458,8 @@ app.post('/api/history/restore/:id', async (req: Request, res: Response) => {
 // ==========================================
 // THEMES
 // ==========================================
-const STYLE_PATH = path.join(PRESENTATION_DIR, 'style.css');
+// STYLE_PATH can be overridden via env var (for Railway where userdata is separate)
+const STYLE_PATH = process.env.STYLE_PATH || path.join(PRESENTATION_DIR, 'style.css');
 
 // Get default theme content from file
 const getDefaultTheme = (): string => {
