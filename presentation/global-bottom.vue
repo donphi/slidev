@@ -13,21 +13,13 @@
   </div>
   
   <!-- Page Number (hidden on first slide) -->
-  <div v-if="showPageNumber" class="page-number">
-    {{ currentSlideNo }} of {{ total }}
+  <div v-if="$slidev.nav.currentPage > 1" class="page-number">
+    {{ $slidev.nav.currentPage }} of {{ $slidev.nav.total }}
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useNav } from '@slidev/client'
-
-const { currentSlideNo, total } = useNav()
-
-// Hide page number on first slide only
-const showPageNumber = computed(() => {
-  return currentSlideNo.value > 1
-})
+// No useNav needed - using $slidev global in template
 </script>
 
 <style scoped>
