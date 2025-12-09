@@ -97,7 +97,7 @@ ENV CHOKIDAR_USEPOLLING=false
 ENV VITE_DEBUG=true
 # SEED_FROM_FILES: Set to 'false' to prevent local files from overriding database
 # In production, database is source of truth
-ENV SEED_FROM_FILES=false
+ENV SEED_FROM_FILES=true
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
