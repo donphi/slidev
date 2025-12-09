@@ -195,9 +195,12 @@
      meanLineWidth: 2,
      meanLineType: 'dotted' as const,
      
-     // Default histogram settings
-     defaultBinCount: 35,
+    // Default histogram settings (matches Python's bins=30)
+    defaultBinCount: 30,
      defaultFillOpacity: 0.35,
+
+    // Distribution chart colors (used in order) - distinct colors
+    seriesColors: ['#5d8392', '#E07A5F', '#81B29A'],  // Blue-gray, Coral, Sage green
    }
    
    

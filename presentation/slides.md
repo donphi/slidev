@@ -11,7 +11,6 @@ transition: slide-left
 title: Board Assessment Management
 mdc: true
 ---
-
 # Board Assessment Management
 
 ## Introduction & Capital Raise — December 2025
@@ -73,16 +72,16 @@ mdc: true
 - Investment returns follow management quality
 - Yet the industry obsesses over the derivatives (financials, price action) while treating the primary driver as "qualitative"
 
-
 ## What if you could score management systematically.
 
 - Quantitative scoring of leadership qualities and characteristics
 - Formula-driven — removes emotional bias from allocation
-- Inspired by insurance and banking risk models (actuarial rigor applied to investment)
+- Inspired by insurance and banking risk models 
 
 <!-- ==================== SLIDE 5: Investment Model ==================== -->
 ---
-
+class: table-w-50
+---
 # Investment Model
 
 ## Management Scorcard
@@ -119,7 +118,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 ### What we do:
 - Focus *only* on management — no reliance on company fundamentals or market price data
 - Allocate capital systematically to highest-scoring management teams
-- Model runs quarterly with annual rebalancing (plus ad-hoc for major executive changes)
+- Model runs quarterly with quarterly rebalancing (plus ad-hoc for major executive changes)
 
 ### Target performance:
 - BAM Core: S&P 500 + 300 bps (lower active risk)
@@ -139,7 +138,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
   <ProductionPipeline />
 
 
-**Key principle:** LLMs extract from messy filings; deterministic rules score and decide. No black-box portfolio decisions.
+
 
 <!-- ==================== SLIDE 8: Technical Infrastructure ==================== -->
 ---
@@ -230,16 +229,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 ## Score distribution across S&P 500 universe
 
-<div class="chart-container">
-  <!-- This is a placeholder for a real chart using a library like Chart.js or ECharts -->
-  <div style="text-align: center;">
-    <p><strong>[Chart Placeholder]</strong></p>
-    <p>X-axis: Management Score (0-10)</p>
-    <p>Y-axis: Number of companies</p>
-  </div>
-</div>
-
-- Highlight: Top quintile cutoff for BAM Core selection
+<BamScoreDistributions />
 
 <!-- ==================== SLIDE 12: BAM Core Strategy ==================== -->
 ---

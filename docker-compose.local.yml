@@ -12,6 +12,8 @@ services:
       dockerfile: Dockerfile.local
     ports:
       - "3030:3030"
+    # Run slidev with remote access (base path set via SLIDEV_BASE env var)
+    command: ["npx", "slidev", "--remote", "--port", "3030"]
     volumes:
       # Mount entire presentation folder for fast HMR
       # This allows native file watching instead of copying files
@@ -24,6 +26,8 @@ services:
       - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-false}
       # Vite needs this to know it's in a container
       - VITE_DEV_SERVER_HOST=0.0.0.0
+      # Base path for proxy setup (editor proxies /slidev → slidev:3030)
+      - SLIDEV_BASE=/slidev/
     # Use tini for proper signal handling (faster shutdown)
     init: true
 

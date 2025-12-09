@@ -26,7 +26,7 @@
 -->
 
 <script setup lang="ts">
-    import { ref, computed, onMounted, watch } from 'vue'
+    import { ref, computed, onMounted, watch, nextTick } from 'vue'
     import * as echarts from 'echarts/core'
     import { LineChart, BarChart } from 'echarts/charts'
     import {
@@ -91,6 +91,7 @@
       yAxisLabel?: string
       xMin?: number
       xMax?: number
+      yMax?: number  // Fixed Y-axis maximum for consistent scaling across charts
     }
     
     const props = withDefaults(defineProps<Props>(), {
@@ -180,15 +181,26 @@
     }
     
     function createNormalCurve(
-      binCenters: number[], 
+      xMin: number,
+      xMax: number, 
       mean: number, 
       std: number, 
       totalCount: number,
-      binWidth: number
-    ): number[] {
+      binWidth: number,
+      numPoints: number = 100  // Match Python's 100 points for smooth curve
+    ): [number, number][] {
       // Scale the normal PDF to match histogram counts
       const scaleFactor = totalCount * binWidth
-      return binCenters.map(x => normalPDF(x, mean, std) * scaleFactor)
+      const step = (xMax - xMin) / (numPoints - 1)
+      const curve: [number, number][] = []
+      
+      for (let i = 0; i < numPoints; i++) {
+        const x = xMin + i * step
+        const y = normalPDF(x, mean, std) * scaleFactor
+        curve.push([x, y])
+      }
+      
+      return curve
     }
     
     
@@ -207,40 +219,37 @@
       const xMax = props.xMax ?? Math.ceil(stats.max + 0.5)
       
       const { bins, binCenters, binWidth } = createHistogram(data, props.binCount, xMin, xMax)
-      const normalCurve = createNormalCurve(binCenters, stats.mean, stats.std, data.length, binWidth)
       
-      // Format labels for X-axis (round to 1 decimal)
-      const xLabels = binCenters.map(x => x.toFixed(1))
+      // Convert histogram to [x, y] pairs for value-based axis
+      const histogramData: [number, number][] = binCenters.map((x, i) => [x, bins[i]])
+      
+      // Generate smooth normal curve with 100 points (matches Python)
+      const normalCurve = createNormalCurve(xMin, xMax, stats.mean, stats.std, data.length, binWidth, 100)
       
       return {
         animation: false,
         
         grid: {
-          left: chartGrid.left,
+          left: 60,  // Increased for Y-axis label spacing
           right: chartGrid.right,
-          top: 55,
-          bottom: 45,
+          top: props.title ? 30 : 15,
+          bottom: 75,  // More space for legend at bottom
           containLabel: false,
         },
         
         legend: {
           show: true,
-          top: 25,
-          left: 10,
-          orient: 'vertical',
-          itemWidth: 20,
+          top: 'bottom',
+          left: 'center',
+          orient: 'horizontal',
+          itemWidth: 15,
           itemHeight: 10,
-          itemGap: 5,
+          itemGap: 10,
           textStyle: {
             fontFamily: chartTypography.fontFamily,
-            fontSize: 9,
+            fontSize: 8,
             color: chartTypography.legendColor,
           },
-          data: [
-            { name: 'Distribution', icon: 'path://M0,0 L20,0 L20,10 L0,10 Z' },
-            { name: `Normal fit (μ=${stats.mean.toFixed(2)}, σ=${stats.std.toFixed(2)})`, icon: 'path://M0,5 L20,5' },
-            { name: `Mean: ${stats.mean.toFixed(2)}`, icon: 'path://M0,0 L0,10' },
-          ],
         },
         
         tooltip: {
@@ -253,8 +262,9 @@
         },
         
         xAxis: {
-          type: 'category',
-          data: xLabels,
+          type: 'value',
+          min: xMin,
+          max: xMax,
           name: props.xAxisLabel,
           nameLocation: 'middle',
           nameGap: 28,
@@ -270,14 +280,12 @@
           axisTick: {
             show: true,
             lineStyle: { color: chartColors.axisTick },
-            alignWithLabel: true,
-            interval: Math.floor(props.binCount / 6) - 1,
           },
           axisLabel: {
             fontFamily: chartTypography.fontFamily,
             fontSize: chartTypography.axisLabelFontSize,
             color: chartTypography.axisLabelColor,
-            interval: Math.floor(props.binCount / 6) - 1,
+            formatter: (value: number) => value.toFixed(1),
           },
           splitLine: { show: chartGrid.showXSplitLine },
         },
@@ -286,12 +294,15 @@
           type: 'value',
           name: props.yAxisLabel,
           nameLocation: 'middle',
-          nameGap: 40,
+          nameGap: 50,  // Increased gap from numbers
           nameTextStyle: {
             fontFamily: chartTypography.fontFamily,
             fontSize: chartTypography.axisNameFontSize,
             color: chartTypography.axisNameColor,
           },
+          max: props.yMax ?? undefined,  // Fixed max if provided
+          min: 0,
+          splitNumber: 4,  // Consistent number of grid lines
           axisLine: { show: chartGrid.showYAxisLine },
           axisTick: { show: false },
           axisLabel: {
@@ -309,14 +320,13 @@
         },
         
         series: [
-          // Histogram bars (rendered as area)
+          // Histogram (no smoothing - angular like true histogram)
           {
-            name: 'Distribution',
+            name: 'Dist',
             type: 'line',
-            data: bins,
-            smooth: 0.3,
-            symbol: 'circle',
-            symbolSize: 4,
+            data: histogramData,
+            smooth: 0.1,     // No smoothing - matches histogram behavior
+            symbol: 'none',
             lineStyle: {
               color: props.color,
               width: 2,
@@ -340,34 +350,41 @@
               },
               data: [
                 {
-                  name: `Mean: ${stats.mean.toFixed(2)}`,
-                  xAxis: binCenters.findIndex(x => x >= stats.mean),
+                  name: `Mean`,
+                  xAxis: stats.mean,  // Now using actual value since x-axis is value type
                 },
               ],
             },
           },
-          // Normal distribution curve
+          // Normal distribution curve (100 points for smooth curve)
           {
-            name: `Normal fit (μ=${stats.mean.toFixed(2)}, σ=${stats.std.toFixed(2)})`,
+            name: `Norm (μ=${stats.mean.toFixed(1)})`,
             type: 'line',
             data: normalCurve,
-            smooth: true,
+            smooth: true,      // Smooth interpolation for bell curve
             symbol: 'none',
             lineStyle: {
               color: distributionSettings.overlayColor,
               width: distributionSettings.normalCurveWidth,
               type: distributionSettings.normalCurveType,
             },
+            itemStyle: {
+              color: distributionSettings.overlayColor,
+            },
           },
           // Invisible series for mean legend entry
           {
-            name: `Mean: ${stats.mean.toFixed(2)}`,
+            name: `Mean`,
             type: 'line',
             data: [],
+            symbol: 'none',
             lineStyle: {
               color: distributionSettings.overlayColor,
               width: distributionSettings.meanLineWidth,
               type: distributionSettings.meanLineType,
+            },
+            itemStyle: {
+              color: distributionSettings.overlayColor,
             },
           },
         ],
@@ -431,17 +448,23 @@
        ───────────────────────────────────────────────────────────────────────────── */
     
     onMounted(async () => {
-      if (props.csvPath) {
-        await loadCsvData()
-      }
-      initChart()
-    })
+        if (props.csvPath) {
+            await loadCsvData()
+            await nextTick()  // Wait for Vue reactivity to update
+        }
+        initChart()
+        })
     
     watch(chartOptions, (newOptions) => {
-      if (chartInstance.value && Object.keys(newOptions).length > 0) {
-        chartInstance.value.setOption(newOptions, true)
-      }
-    }, { deep: true })
+        if (Object.keys(newOptions).length === 0) return
+        
+        if (chartInstance.value) {
+            chartInstance.value.setOption(newOptions, true)
+        } else {
+            // Chart wasn't initialized yet, do it now
+            initChart()
+        }
+        }, { deep: true })
     
     watch(() => props.csvPath, async () => {
       if (props.csvPath) {

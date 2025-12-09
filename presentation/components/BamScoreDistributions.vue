@@ -32,19 +32,19 @@
        For 3 charts with 20px gaps: (870 - 40) / 3 ≈ 276px
        ───────────────────────────────────────────────────────────────────────────── */
     
-    const CHART_WIDTH = 276
-    const CHART_HEIGHT = 280
-    const GAP = 20
+    const CHART_WIDTH = 280
+    const CHART_HEIGHT = 300
+    const GAP = 5
     
     /* ─────────────────────────────────────────────────────────────────────────────
        COLORS (matching the original chart)
        ───────────────────────────────────────────────────────────────────────────── */
     
     const COLORS = {
-      general: '#4A90D9',   // Blue
-      tech: '#E8873D',      // Orange  
-      overall: '#5CB85C',   // Green
-    }
+        general: distributionSettings.seriesColors[0],
+        tech: distributionSettings.seriesColors[1],
+        overall: distributionSettings.seriesColors[2],
+        }
     
     /* ─────────────────────────────────────────────────────────────────────────────
        CHART SETTINGS (from central config)
@@ -56,9 +56,6 @@
     
     <template>
       <div class="bam-distributions">
-        <!-- Main Title -->
-        <h2 class="main-title">BAM Project Score Distributions</h2>
-        
         <!-- Three Charts -->
         <ChartRow :gap="GAP" align="top" justify="center">
           
@@ -74,8 +71,6 @@
             :binCount="BIN_COUNT"
             xAxisLabel="Score"
             yAxisLabel="Frequency"
-            :xMin="3"
-            :xMax="10"
           />
           
           <!-- Tech Score -->
@@ -90,8 +85,6 @@
             :binCount="BIN_COUNT"
             xAxisLabel="Score"
             yAxisLabel="Frequency"
-            :xMin="1"
-            :xMax="10"
           />
           
           <!-- Overall Score -->
@@ -106,8 +99,6 @@
             :binCount="BIN_COUNT"
             xAxisLabel="Score"
             yAxisLabel="Frequency"
-            :xMin="1"
-            :xMax="10"
           />
           
         </ChartRow>
@@ -117,14 +108,5 @@
     <style scoped>
     .bam-distributions {
       width: 100%;
-    }
-    
-    .main-title {
-      font-family: 'Nunito Sans', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
-      color: #333;
-      text-align: center;
-      margin: 0 0 15px 0;
     }
     </style>

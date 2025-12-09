@@ -6,9 +6,9 @@
     
     Configure positioning and styling via CSS variables in style.css
     
-    $slidev is automatically injected by Slidev and provides:
-    - $slidev.nav.currentPage - current slide number
-    - $slidev.nav.total - total number of slides
+    slidevContext is injected from Slidev and provides:
+    - slidevContext.nav.currentPage - current slide number
+    - slidevContext.nav.total - total number of slides
   -->
   
   <!-- Confidential Label -->
@@ -16,17 +16,27 @@
     CONFIDENTIAL
   </div>
   
-  <!-- Page Number (hidden if slide has 'no-page-number' class in frontmatter) -->
-  <div v-if="!hidePageNumber" class="page-number">
-    {{ $slidev.nav.currentPage }} of {{ $slidev.nav.total }}
+  <!-- Page Number (hidden if slide has 'no-page-number' class in frontmatter or context not ready) -->
+  <div v-if="showPageNumber" class="page-number">
+    {{ currentPage }} of {{ totalPages }}
   </div>
 </template>
 
 <script setup>
 import { inject, computed } from 'vue'
 
-// Access Slidev context (renamed to avoid conflict with auto-injected $slidev)
-const slidevContext = inject('$slidev')
+// Access Slidev context - may be undefined initially
+const slidevContext = inject('$slidev', null)
+
+// Safely get current page number
+const currentPage = computed(() => {
+  return slidevContext?.nav?.currentPage ?? 1
+})
+
+// Safely get total pages
+const totalPages = computed(() => {
+  return slidevContext?.nav?.total ?? 1
+})
 
 // Check if current slide has 'no-page-number' in its class frontmatter
 const hidePageNumber = computed(() => {
@@ -37,6 +47,11 @@ const hidePageNumber = computed(() => {
   } catch {
     return false // Default: show page number if anything fails
   }
+})
+
+// Only show page number when context is available and not hidden
+const showPageNumber = computed(() => {
+  return slidevContext !== null && !hidePageNumber.value
 })
 </script>
 
