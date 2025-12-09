@@ -21,7 +21,6 @@ services:
       # =====================================================
       # DEBUG/VERBOSE LOGGING
       # =====================================================
-      - DEBUG=slidev:*,vite:*
       - VITE_DEBUG=true
       # Set a password to protect the editor (leave empty for no auth)
       - EDITOR_PASSWORD=${EDITOR_PASSWORD:-}

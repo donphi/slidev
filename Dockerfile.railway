@@ -74,7 +74,7 @@ exec concurrently \\\n\
   --prefix "[{name}]" \\\n\
   --prefix-colors "cyan,yellow" \\\n\
   --kill-others-on-fail=false \\\n\
-  "cd /app/presentation && DEBUG=slidev:*,vite:* SLIDEV_BASE=/slidev/ npm run dev -- --log=info 2>&1" \\\n\
+  "cd /app/presentation && SLIDEV_BASE=/slidev/ npm run dev -- --log=info 2>&1" \\\n\
   "sleep 5 && cd /app/editor && npm start"\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
@@ -86,8 +86,6 @@ ENV SLIDEV_DIR=/app/presentation
 ENV SLIDEV_URL=http://localhost:3030
 ENV NODE_NO_WARNINGS=1
 ENV CHOKIDAR_USEPOLLING=false
-# Debug logging for Slidev and Vite
-ENV DEBUG=slidev:*,vite:*
 ENV VITE_DEBUG=true
 # SEED_FROM_FILES: Set to 'false' to prevent local files from overriding database
 # In production, database is source of truth

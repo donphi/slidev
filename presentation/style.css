@@ -56,805 +56,822 @@
    │                                                                              │
    └──────────────────────────────────────────────────────────────────────────────┘ */
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   3. CSS VARIABLES (Custom Properties)                                       │
-   │                                                                              │
-   │   These variables control the entire look of your presentation.              │
-   │   Change a value here, and it updates everywhere automatically.              │
-   │                                                                              │
-   │   Variable naming convention:                                                │
-   │   --category-property: value;                                                │
-   │                                                                              │
-   │   Units guide:                                                               │
-   │   • px   = Fixed pixels (precise, doesn't scale)                             │
-   │   • rem  = Relative to root font size (scales with browser settings)         │
-   │   • em   = Relative to parent element's font size                            │
-   │   • %    = Percentage of parent element                                      │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-:root {
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.1 TYPOGRAPHY
-     
-     Base font settings that affect the entire presentation.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Primary font for all text content (headings, paragraphs, lists) */
-  --slidev-font-family: 'Nunito Sans', sans-serif;
-
-  /* Monospace font for code blocks and inline code */
-  --slidev-code-font-family: 'Fira Code', monospace;
-
-  /* Base font size - all rem values are calculated from this */
-  --slidev-font-size-base: 18px;
-
-  /* Paragraph text size (slightly larger than base for readability) */
-  --slidev-font-size-p: 1.1rem;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.2 COLORS
-     
-     The color palette for your presentation.
-     Use hex codes (#RRGGBB) or named colors.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Primary accent color (used for links, highlights, H2 headings) */
-  --slidev-theme-primary: #5d8392;
-
-  /* Secondary accent color (used sparingly for emphasis) */
-  --slidev-theme-secondary: #42b883;
-
-  /* Default heading color (affects headings not explicitly styled) */
-  --slidev-heading-color: #2c3e50;
-
-  /* Main body text color */
-  --slidev-text-color: #333;
-
-  /* Table border color (used for horizontal lines) */
-  --slidev-table-border-color: #ddd;
-
-  /* Table header background (currently transparent, kept for reference) */
-  --slidev-table-header-bg: #f5f5f5;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.3 LAYOUT & SPACING
-     
-     Control the padding/margins around slide content.
-     These create the "safe area" where your content lives.
-     
-     ┌─────────────────────────────────────────────────────┐
-     │ ← padding-left          padding-right →            │
-     │     ┌─────────────────────────────────────┐        │
-     │  ↑  │                                     │   ↑    │
-     │ top │         YOUR CONTENT AREA           │  top   │
-     │  ↓  │                                     │   ↓    │
-     │     └─────────────────────────────────────┘        │
-     │ ← padding-left       padding-bottom →              │
-     └─────────────────────────────────────────────────────┘
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Distance from the top edge of the slide to content */
-  --slide-padding-top: 2rem;
-
-  /* Distance from the right edge of the slide to content */
-  --slide-padding-right: 4.1rem;
-
-  /* Distance from the bottom edge of the slide to content */
-  --slide-padding-bottom: 2rem;
-
-  /* Distance from the left edge of the slide to content */
-  --slide-padding-left: 4.1rem;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.4 HEADINGS
-     
-     Configure each heading level independently.
-     
-     Hierarchy:
-     • H1 = Main slide title (largest, typically gray)
-     • H2 = Section heading within slide (blue, prominent)
-     • H3 = Sub-section heading (smaller, dark)
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* ─────────────────────────────────────────────────────────
-     H1 - Main Title (# in markdown)
-     The primary heading on each slide
-     ───────────────────────────────────────────────────────── */
-  --h1-font-size: 2.5rem;
-  --h1-color: #696d72;
-  --h1-margin-top: 0.5rem;
-  --h1-margin-bottom: 0;
-  --h1-margin-left: 0;
-  --h1-line-height: 1.2;
-  --h1-font-weight: 700;
-
-  /* ─────────────────────────────────────────────────────────
-     H2 - Subheading (## in markdown)
-     Used for major sections within a slide
-     ───────────────────────────────────────────────────────── */
-  --h2-font-size: 1.4rem;
-  --h2-color: #5d8392;
-  --h2-margin-top: 0.5em;
-  --h2-margin-bottom: 0.5em;
-  --h2-line-height: 1.3;
-  --h2-font-weight: 700;
-
-  /* ─────────────────────────────────────────────────────────
-     H3 - Section Heading (### in markdown)
-     Used for smaller sections or labels
-     ───────────────────────────────────────────────────────── */
-  --h3-font-size: 1rem;
-  --h3-color: #2d4047;
-  --h3-margin-top: 0.1em;
-  --h3-margin-bottom: 0.2em;
-  --h3-font-weight: 700;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.5 SPACING ELEMENTS
-     
-     Control vertical spacing - both ADDING and REDUCING space.
-     
-     ┌─────────────────────────────────────────────────────────────────────┐
-     │  TO ADD SPACE:                                                      │
-     │  [br]                              → Add small gap                  │
-     │  [div class="spacer"][/div]        → Same as [br]                   │
-     │  [div style="height: 20px"][/div]  → Custom height                  │
-     ├─────────────────────────────────────────────────────────────────────┤
-     │  TO REDUCE SPACE:                                                   │
-     │  [gap][/gap]                       → Pull content up                │
-     │  [div class="pull-sm"]...[/div]    → Pull up with class             │
-     └─────────────────────────────────────────────────────────────────────┘
-     
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Height of each [br] tag and .spacer element (POSITIVE = adds space) */
-  --br-height: 4px;
-
-  /* Height of each [gap] element (NEGATIVE = reduces space, pulls up) */
-  --gap-height: -8px;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.6 TABLES
-     
-     Configure table appearance.
-     Tables use horizontal lines only with alternating row colors.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Line height within table cells (1.0 = tight, 1.5 = loose) */
-  --table-line-height: 1.1;
-
-  /* Default font size for tables (relative to parent) */
-  --table-font-size: 0.6em;
-
-  /* Padding inside each table cell */
-  --table-cell-padding: 0.4rem;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.7 LISTS
-     
-     Configure bullet points and numbered lists.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Vertical space between list items */
-  --list-item-spacing: 0.5rem;
-
-  /* Line height within each list item */
-  --list-line-height: 1.5;
-
-  /* Font size for list items */
-  --list-font-size: 1em;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.8 CONFIDENTIAL LABEL
-     
-     The "CONFIDENTIAL" watermark that appears on slides.
-     Defined in global-bottom.vue, styled here via CSS variables.
-     
-     POSITIONING TIP:
-     Set ONE of top/bottom to a value, and the OTHER to 'auto'.
-     Set ONE of left/right to a value, and the OTHER to 'auto'.
-     
-     Example positions:
-     ┌────────────────────────────────────────────────────────┐
-     │ TOP-LEFT         TOP-RIGHT                            │
-     │ top: 1rem        top: 1rem                            │
-     │ left: 1rem       right: 1rem                          │
-     │                                                        │
-     │ BOTTOM-LEFT      BOTTOM-RIGHT                         │
-     │ bottom: 1rem     bottom: 1rem                         │
-     │ left: 1rem       right: 1rem                          │
-     └────────────────────────────────────────────────────────┘
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Vertical position (use one, set other to 'auto') */
-  --confidential-top: 1.6rem;
-  --confidential-bottom: auto;
-
-  /* Horizontal position (use one, set other to 'auto') */
-  --confidential-left: auto;
-  --confidential-right: 4.2rem;
-
-  /* Typography */
-  --confidential-font-size: 0.5rem;
-  --confidential-tracking: 0.1em;
-  --confidential-color: #441313;
-
-
-  /* ══════════════════════════════════════════════════════════════════════════
-     3.9 PAGE NUMBERS
-     
-     The "X of Y" page indicator on slides.
-     Defined in global-bottom.vue, styled here via CSS variables.
-     
-     Uses same positioning system as confidential label.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  /* Vertical position (use one, set other to 'auto') */
-  --page-number-top: auto;
-  --page-number-bottom: 1.6rem;
-
-  /* Horizontal position (use one, set other to 'auto') */
-  --page-number-left: 4.2rem;
-  --page-number-right: auto;
-
-  /* Typography */
-  --page-number-font-size: 0.4rem;
-  --page-number-color: #666;
-
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   4. BASE STYLES                                                             │
-   │                                                                              │
-   │   Core styling applied to every slide. These rules set up the foundation     │
-   │   that all other styles build upon.                                          │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* Base slide container - applies to all slides */
-.slidev-layout {
-  font-family: var(--slidev-font-family);
-  font-size: var(--slidev-font-size-base);
-  color: var(--slidev-text-color);
-  padding-top: var(--slide-padding-top);
-  padding-right: var(--slide-padding-right);
-  padding-bottom: var(--slide-padding-bottom);
-  padding-left: var(--slide-padding-left);
-}
-
-/* Background image for standard slides
-   The :not(.intro) selector excludes the intro/cover slides
-   which typically have their own background defined in frontmatter */
-.slidev-layout:not(.intro) {
-  background-image: url('/img/footer.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   5. HEADING STYLES                                                          │
-   │                                                                              │
-   │   Implementation of the heading variables defined above.                     │
-   │   These rules apply the CSS variable values to actual heading elements.      │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* H1 - Main slide title (# in markdown) */
-.slidev-layout h1 {
-  font-size: var(--h1-font-size);
-  color: var(--h1-color);
-  margin-top: var(--h1-margin-top);
-  margin-bottom: var(--h1-margin-bottom);
-  margin-left: var(--h1-margin-left);
-  line-height: var(--h1-line-height);
-  font-weight: var(--h1-font-weight);
-}
-
-/* H2 - Subheading (## in markdown) */
-.slidev-layout h2 {
-  font-size: var(--h2-font-size);
-  color: var(--h2-color);
-  margin-top: var(--h2-margin-top);
-  margin-bottom: var(--h2-margin-bottom);
-  line-height: var(--h2-line-height);
-  font-weight: var(--h2-font-weight);
-}
-
-/* H3 - Section heading (### in markdown) */
-.slidev-layout h3 {
-  font-size: var(--h3-font-size);
-  color: var(--h3-color);
-  margin-top: var(--h3-margin-top);
-  margin-bottom: var(--h3-margin-bottom);
-  font-weight: var(--h3-font-weight);
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   6. TEXT STYLES                                                             │
-   │                                                                              │
-   │   Styling for paragraphs, bold text, and other inline elements.              │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* Paragraph text */
-.slidev-layout p {
-  font-size: var(--slidev-font-size-p);
-  line-height: 1.6;
-  margin-bottom: 0.8em;
-}
-
-/* Bold text - rendered from **text** or __text__ in markdown */
-.slidev-layout strong,
-.slidev-layout b {
-  font-weight: 700 !important;
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   7. SPACING ELEMENTS                                                        │
-   │                                                                              │
-   │   These styles control vertical spacing - both ADDING and REDUCING space.   │
-   │                                                                              │
-   │   ═══════════════════════════════════════════════════════════════════════    │
-   │   TO ADD SPACE (push content apart):                                         │
-   │   ═══════════════════════════════════════════════════════════════════════    │
-   │                                                                              │
-   │   [br]                              → Small gap (default 4px)                │
-   │   [br][br][br]                      → Stack for larger gaps                  │
-   │   [div class="spacer"][/div]        → Same as [br]                           │
-   │   [div style="height: 20px"][/div]  → Custom exact height                    │
-   │                                                                              │
-   │   ═══════════════════════════════════════════════════════════════════════    │
-   │   TO REDUCE SPACE (pull content closer):                                     │
-   │   ═══════════════════════════════════════════════════════════════════════    │
-   │                                                                              │
-   │   [gap][/gap]                       → Pull up (default -8px)                 │
-   │   [gap][/gap][gap][/gap]            → Stack for stronger pull                │
-   │   [div class="pull-sm"]...[/div]    → Wrap content, pull up 8px              │
-   │   [div class="pull-md"]...[/div]    → Wrap content, pull up 16px             │
-   │   [div class="pull-lg"]...[/div]    → Wrap content, pull up 24px             │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* ─────────────────────────────────────────────────────────
-   ADDING Space: [br] and .spacer
+   @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Fira+Code:wght@400;500&display=swap');
+
+
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   3. CSS VARIABLES (Custom Properties)                                       │
+      │                                                                              │
+      │   These variables control the entire look of your presentation.              │
+      │   Change a value here, and it updates everywhere automatically.              │
+      │                                                                              │
+      │   Variable naming convention:                                                │
+      │   --category-property: value;                                                │
+      │                                                                              │
+      │   Units guide:                                                               │
+      │   • px   = Fixed pixels (precise, doesn't scale)                             │
+      │   • rem  = Relative to root font size (scales with browser settings)         │
+      │   • em   = Relative to parent element's font size                            │
+      │   • %    = Percentage of parent element                                      │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   :root {
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.1 TYPOGRAPHY
+        
+        Base font settings that affect the entire presentation.
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Primary font for all text content (headings, paragraphs, lists) */
+     --slidev-font-family: 'Nunito Sans', sans-serif;
+   
+     /* Monospace font for code blocks and inline code */
+     --slidev-code-font-family: 'Fira Code', monospace;
+   
+     /* Base font size - all rem values are calculated from this */
+     --slidev-font-size-base: 18px;
+   
+     /* Paragraph text size (slightly larger than base for readability) */
+     --slidev-font-size-p: 1.1rem;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.2 COLORS
+        
+        The color palette for your presentation.
+        Use hex codes (#RRGGBB) or named colors.
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Primary accent color (used for links, highlights, H2 headings) */
+     --slidev-theme-primary: #5d8392;
+   
+     /* Secondary accent color (used sparingly for emphasis) */
+     --slidev-theme-secondary: #42b883;
+   
+     /* Default heading color (affects headings not explicitly styled) */
+     --slidev-heading-color: #2c3e50;
+   
+     /* Main body text color */
+     --slidev-text-color: #333;
+   
+     /* Table border color (used for horizontal lines) */
+     --slidev-table-border-color: #ddd;
+   
+     /* Table header background (currently transparent, kept for reference) */
+     --slidev-table-header-bg: #f5f5f5;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.3 LAYOUT & SPACING
+        
+        Control the padding/margins around slide content.
+        These create the "safe area" where your content lives.
+        
+        ┌─────────────────────────────────────────────────────┐
+        │ ← padding-left          padding-right →            │
+        │     ┌─────────────────────────────────────┐        │
+        │  ↑  │                                     │   ↑    │
+        │ top │         YOUR CONTENT AREA           │  top   │
+        │  ↓  │                                     │   ↓    │
+        │     └─────────────────────────────────────┘        │
+        │ ← padding-left       padding-bottom →              │
+        └─────────────────────────────────────────────────────┘
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Distance from the top edge of the slide to content */
+     --slide-padding-top: 2rem;
+   
+     /* Distance from the right edge of the slide to content */
+     --slide-padding-right: 4.1rem;
+   
+     /* Distance from the bottom edge of the slide to content */
+     --slide-padding-bottom: 2rem;
+   
+     /* Distance from the left edge of the slide to content */
+     --slide-padding-left: 4.1rem;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.4 HEADINGS
+        
+        Configure each heading level independently.
+        
+        Hierarchy:
+        • H1 = Main slide title (largest, typically gray)
+        • H2 = Section heading within slide (blue, prominent)
+        • H3 = Sub-section heading (smaller, dark)
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* ─────────────────────────────────────────────────────────
+        H1 - Main Title (# in markdown)
+        The primary heading on each slide
+        ───────────────────────────────────────────────────────── */
+     --h1-font-size: 2.5rem;
+     --h1-color: #696d72;
+     --h1-margin-top: 0.5rem;
+     --h1-margin-bottom: 0;
+     --h1-margin-left: 0;
+     --h1-line-height: 1.2;
+     --h1-font-weight: 700;
+   
+     /* ─────────────────────────────────────────────────────────
+        H2 - Subheading (## in markdown)
+        Used for major sections within a slide
+        ───────────────────────────────────────────────────────── */
+     --h2-font-size: 1.4rem;
+     --h2-color: #5d8392;
+     --h2-margin-top: 0.5em;
+     --h2-margin-bottom: 0.5em;
+     --h2-line-height: 1.3;
+     --h2-font-weight: 700;
+   
+     /* ─────────────────────────────────────────────────────────
+        H3 - Section Heading (### in markdown)
+        Used for smaller sections or labels
+        ───────────────────────────────────────────────────────── */
+     --h3-font-size: 1rem;
+     --h3-color: #2d4047;
+     --h3-margin-top: 0.1em;
+     --h3-margin-bottom: 0.2em;
+     --h3-font-weight: 700;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.5 SPACING ELEMENTS
+        
+        Control vertical spacing - both ADDING and REDUCING space.
+        
+        ┌─────────────────────────────────────────────────────────────────────┐
+        │  TO ADD SPACE:                                                      │
+        │  [br]                              → Add small gap                  │
+        │  [div class="spacer"][/div]        → Same as [br]                   │
+        │  [div style="height: 20px"][/div]  → Custom height                  │
+        ├─────────────────────────────────────────────────────────────────────┤
+        │  TO REDUCE SPACE:                                                   │
+        │  [gap][/gap]                       → Pull content up                │
+        │  [div class="pull-sm"]...[/div]    → Pull up with class             │
+        └─────────────────────────────────────────────────────────────────────┘
+        
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Height of each [br] tag and .spacer element (POSITIVE = adds space) */
+     --br-height: 4px;
+   
+     /* Height of each [gap] element (NEGATIVE = reduces space, pulls up) */
+     --gap-height: -8px;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.6 TABLES
+        
+        Configure table appearance.
+        Tables use horizontal lines only with alternating row colors.
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Line height within table cells (1.0 = tight, 1.5 = loose) */
+     --table-line-height: 1.1;
+   
+     /* Default font size for tables (relative to parent) */
+     --table-font-size: 0.6em;
+   
+     /* Padding inside each table cell */
+     --table-cell-padding: 0.4rem;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.7 LISTS
+        
+        Configure bullet points and numbered lists.
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Vertical space between list items */
+     --list-item-spacing: 0.5rem;
+   
+     /* Line height within each list item */
+     --list-line-height: 1.5;
+   
+     /* Font size for list items */
+     --list-font-size: 1em;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.8 CONFIDENTIAL LABEL
+        
+        The "CONFIDENTIAL" watermark that appears on slides.
+        Defined in global-bottom.vue, styled here via CSS variables.
+        
+        POSITIONING TIP:
+        Set ONE of top/bottom to a value, and the OTHER to 'auto'.
+        Set ONE of left/right to a value, and the OTHER to 'auto'.
+        
+        Example positions:
+        ┌────────────────────────────────────────────────────────┐
+        │ TOP-LEFT         TOP-RIGHT                            │
+        │ top: 1rem        top: 1rem                            │
+        │ left: 1rem       right: 1rem                          │
+        │                                                        │
+        │ BOTTOM-LEFT      BOTTOM-RIGHT                         │
+        │ bottom: 1rem     bottom: 1rem                         │
+        │ left: 1rem       right: 1rem                          │
+        └────────────────────────────────────────────────────────┘
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Vertical position (use one, set other to 'auto') */
+     --confidential-top: 1.6rem;
+     --confidential-bottom: auto;
+   
+     /* Horizontal position (use one, set other to 'auto') */
+     --confidential-left: auto;
+     --confidential-right: 4.2rem;
+   
+     /* Typography */
+     --confidential-font-size: 0.5rem;
+     --confidential-tracking: 0.1em;
+     --confidential-color: #441313;
+   
+   
+     /* ══════════════════════════════════════════════════════════════════════════
+        3.9 PAGE NUMBERS
+        
+        The "X of Y" page indicator on slides.
+        Defined in global-bottom.vue, styled here via CSS variables.
+        
+        Uses same positioning system as confidential label.
+        ══════════════════════════════════════════════════════════════════════════ */
+   
+     /* Vertical position (use one, set other to 'auto') */
+     --page-number-top: auto;
+     --page-number-bottom: 1.6rem;
+   
+     /* Horizontal position (use one, set other to 'auto') */
+     --page-number-left: 4.2rem;
+     --page-number-right: auto;
+   
+     /* Typography */
+     --page-number-font-size: 0.4rem;
+     --page-number-color: #666;
+   
+   }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   4. BASE STYLES                                                             │
+      │                                                                              │
+      │   Core styling applied to every slide. These rules set up the foundation     │
+      │   that all other styles build upon.                                          │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* Base slide container - applies to all slides */
+   .slidev-layout {
+     font-family: var(--slidev-font-family);
+     font-size: var(--slidev-font-size-base);
+     color: var(--slidev-text-color);
+     padding-top: var(--slide-padding-top);
+     padding-right: var(--slide-padding-right);
+     padding-bottom: var(--slide-padding-bottom);
+     padding-left: var(--slide-padding-left);
+   }
+   
+   /* Background image for standard slides
+      The :not(.intro) selector excludes the intro/cover slides
+      which typically have their own background defined in frontmatter */
+   .slidev-layout:not(.intro) {
+     background-image: url('/img/footer.png');
+     background-size: cover;
+     background-position: center;
+     background-repeat: no-repeat;
+   }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   5. HEADING STYLES                                                          │
+      │                                                                              │
+      │   Implementation of the heading variables defined above.                     │
+      │   These rules apply the CSS variable values to actual heading elements.      │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* H1 - Main slide title (# in markdown) */
+   .slidev-layout h1 {
+     font-size: var(--h1-font-size);
+     color: var(--h1-color);
+     margin-top: var(--h1-margin-top);
+     margin-bottom: var(--h1-margin-bottom);
+     margin-left: var(--h1-margin-left);
+     line-height: var(--h1-line-height);
+     font-weight: var(--h1-font-weight);
+   }
+   
+   /* H2 - Subheading (## in markdown) */
+   .slidev-layout h2 {
+     font-size: var(--h2-font-size);
+     color: var(--h2-color);
+     margin-top: var(--h2-margin-top);
+     margin-bottom: var(--h2-margin-bottom);
+     line-height: var(--h2-line-height);
+     font-weight: var(--h2-font-weight);
+   }
+   
+   /* H3 - Section heading (### in markdown) */
+   .slidev-layout h3 {
+     font-size: var(--h3-font-size);
+     color: var(--h3-color);
+     margin-top: var(--h3-margin-top);
+     margin-bottom: var(--h3-margin-bottom);
+     font-weight: var(--h3-font-weight);
+   }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   6. TEXT STYLES                                                             │
+      │                                                                              │
+      │   Styling for paragraphs, bold text, and other inline elements.              │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* Paragraph text */
+   .slidev-layout p {
+     font-size: var(--slidev-font-size-p);
+     line-height: 1.6;
+     margin-bottom: 0.8em;
+   }
+   
+   /* Bold text - rendered from **text** or __text__ in markdown */
+   .slidev-layout strong,
+   .slidev-layout b {
+     font-weight: 700 !important;
+   }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   7. SPACING ELEMENTS                                                        │
+      │                                                                              │
+      │   These styles control vertical spacing - both ADDING and REDUCING space.   │
+      │                                                                              │
+      │   ═══════════════════════════════════════════════════════════════════════    │
+      │   TO ADD SPACE (push content apart):                                         │
+      │   ═══════════════════════════════════════════════════════════════════════    │
+      │                                                                              │
+      │   [br]                              → Small gap (default 4px)                │
+      │   [br][br][br]                      → Stack for larger gaps                  │
+      │   [div class="spacer"][/div]        → Same as [br]                           │
+      │   [div style="height: 20px"][/div]  → Custom exact height                    │
+      │                                                                              │
+      │   ═══════════════════════════════════════════════════════════════════════    │
+      │   TO REDUCE SPACE (pull content closer):                                     │
+      │   ═══════════════════════════════════════════════════════════════════════    │
+      │                                                                              │
+      │   [gap][/gap]                       → Pull up (default -8px)                 │
+      │   [gap][/gap][gap][/gap]            → Stack for stronger pull                │
+      │   [div class="pull-sm"]...[/div]    → Wrap content, pull up 8px              │
+      │   [div class="pull-md"]...[/div]    → Wrap content, pull up 16px             │
+      │   [div class="pull-lg"]...[/div]    → Wrap content, pull up 24px             │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* ─────────────────────────────────────────────────────────
+      ADDING Space: [br] and .spacer
+      ───────────────────────────────────────────────────────── */
+   
+   /* Transform [br] from inline to block element with configurable height */
+   .slidev-layout br {
+     display: block;
+     content: "";
+     line-height: var(--br-height);
+   }
+   
+   /* Alternative spacer using a div - same height as [br] */
+   .slidev-layout .spacer {
+     height: var(--br-height);
+   }
+   
+   /* ─────────────────────────────────────────────────────────
+      REDUCING Space: [gap] and .pull-* classes
+      
+      Use these to PULL content CLOSER together by applying
+      negative margins.
+      ───────────────────────────────────────────────────────── */
+   
+   /* The [gap] element - reduces space between elements
+      Usage: [gap][/gap] or stack multiple [gap][/gap][gap][/gap] */
+   .slidev-layout gap {
+     display: block;
+     margin-bottom: var(--gap-height);
+   }
+   
+   /* Pull-up utility classes - wrap content to pull it up
+      Usage: [div class="pull-sm"]Content pulled up[/div] */
+   .slidev-layout .pull-xs { margin-top: -4px !important; }
+   .slidev-layout .pull-sm { margin-top: -8px !important; }
+   .slidev-layout .pull-md { margin-top: -16px !important; }
+   .slidev-layout .pull-lg { margin-top: -24px !important; }
+   .slidev-layout .pull-xl { margin-top: -32px !important; }
+   
+   /* Also support on slidev-page level for frontmatter usage */
+   .slidev-page.pull-xs .slidev-layout { margin-top: -4px !important; }
+   .slidev-page.pull-sm .slidev-layout { margin-top: -8px !important; }
+   .slidev-page.pull-md .slidev-layout { margin-top: -16px !important; }
+   .slidev-page.pull-lg .slidev-layout { margin-top: -24px !important; }
+   .slidev-page.pull-xl .slidev-layout { margin-top: -32px !important; }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   8. TABLE STYLES                                                            │
+      │                                                                              │
+      │   Tables feature:                                                            │
+      │   • Horizontal lines only (no vertical borders)                              │
+      │   • Alternating row colors for readability                                   │
+      │   • Blue header text matching the theme                                      │
+      │   • Condensed variants for data-heavy slides                                 │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* ─────────────────────────────────────────────────────────
+      Base Table Styles
+      ───────────────────────────────────────────────────────── */
+   
+   /* Table container */
+   .slidev-layout table {
+     width: 100%;
+     border-collapse: collapse;
+     font-size: var(--table-font-size);
+     margin: 0.5rem 0;
+     border: none;
+   }
+   
+   /* Table cells (both header and data) */
+   .slidev-layout th,
+   .slidev-layout td {
+     border: none;
+     border-bottom: 1px solid #e0e0e0;
+     padding: var(--table-cell-padding);
+     text-align: left;
+     line-height: var(--table-line-height);
+   }
+   
+   /* Table header cells */
+   .slidev-layout th {
+     background-color: transparent;
+     font-weight: 700 !important;
+     color: #5d8392;
+     border-bottom: 1px solid #e0e0e0;
+   }
+   
+   /* Alternating row colors (zebra striping) */
+   .slidev-layout tr:nth-child(even) {
+     background-color: #f9f9fb;
+   }
+   
+   /* Remove bottom border from last row */
+   .slidev-layout tr:last-child td {
+     border-bottom: none;
+   }
+   
+   /* ─────────────────────────────────────────────────────────
+      Condensed Table Variants
+      
+      Use these classes when you have large tables that need
+      to fit more data on a single slide.
+      
+      USAGE: Wrap your table in a div with the class:
+      
+      [div class="table-xs"]
+      
+      | Column 1 | Column 2 |
+      |----------|----------|
+      | Data     | Data     |
+      
+      [/div]
+      ───────────────────────────────────────────────────────── */
+   
+   /* Extra Extra Small - Maximum density for side-by-side layouts */
+   .table-xxs table { font-size: 0.45em !important; }
+   .table-xxs th, .table-xxs td { padding: 0.1rem 0.2rem !important; }
+   
+   /* Extra Small - Very tight spacing for maximum data density */
+   .table-xs table { font-size: 0.5em !important; }
+   .table-xs th, .table-xs td { padding: 0.15rem 0.25rem !important; }
+   
+   /* Small - Compact but still readable */
+   .table-sm table { font-size: 0.55em !important; }
+   .table-sm th, .table-sm td { padding: 0.2rem 0.3rem !important; }
+   
+   /* Medium - Slightly condensed from default */
+   .table-md table { font-size: 0.6em !important; }
+   .table-md th, .table-md td { padding: 0.25rem 0.35rem !important; }
+   
+   /* Alternative class name for condensed tables */
+   .condensed-table table { font-size: 0.5em !important; }
+   .condensed-table th, .condensed-table td { padding: 0.15rem 0.25rem !important; }
+   
+   /* ─────────────────────────────────────────────────────────
+      Table Width Classes (Anchored Left)
+      
+      Control table width while keeping it left-aligned.
+      Columns auto-size based on content.
+      
+      USAGE IN FRONTMATTER:
+      ---
+      class: table-w-50
+      ---
+      
+      USAGE ON SPECIFIC TABLE:
+      [div class="table-w-75"]
+      | Col 1 | Col 2 |
+      |-------|-------|
+      | Data  | Data  |
+      [/div]
+      
+      Available: table-w-25, table-w-33, table-w-50, table-w-60, table-w-75, table-w-80, table-w-90
+      ───────────────────────────────────────────────────────── */
+   
+   /* 25% width */
+   .table-w-25 table,
+   .slidev-page.table-w-25 .slidev-layout table {
+     width: 25% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 33% width */
+   .table-w-33 table,
+   .slidev-page.table-w-33 .slidev-layout table {
+     width: 33% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 50% width */
+   .table-w-50 table,
+   .slidev-page.table-w-50 .slidev-layout table {
+     width: 50% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 60% width */
+   .table-w-60 table,
+   .slidev-page.table-w-60 .slidev-layout table {
+     width: 60% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 75% width */
+   .table-w-75 table,
+   .slidev-page.table-w-75 .slidev-layout table {
+     width: 75% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 80% width */
+   .table-w-80 table,
+   .slidev-page.table-w-80 .slidev-layout table {
+     width: 80% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* 90% width */
+   .table-w-90 table,
+   .slidev-page.table-w-90 .slidev-layout table {
+     width: 90% !important;
+     margin-left: 0 !important;
+     margin-right: auto !important;
+   }
+   
+   /* Auto-fit columns to content (applies to all width variants) */
+   .table-w-25 table, .table-w-33 table, .table-w-50 table,
+   .table-w-60 table, .table-w-75 table, .table-w-80 table, .table-w-90 table,
+   .slidev-page.table-w-25 .slidev-layout table, .slidev-page.table-w-33 .slidev-layout table,
+   .slidev-page.table-w-50 .slidev-layout table, .slidev-page.table-w-60 .slidev-layout table,
+   .slidev-page.table-w-75 .slidev-layout table, .slidev-page.table-w-80 .slidev-layout table,
+   .slidev-page.table-w-90 .slidev-layout table {
+     table-layout: auto;
+   }
+   
+   /* Prevent text wrapping in width-constrained tables */
+   .table-w-25 th, .table-w-25 td, .table-w-33 th, .table-w-33 td,
+   .table-w-50 th, .table-w-50 td, .table-w-60 th, .table-w-60 td,
+   .table-w-75 th, .table-w-75 td, .table-w-80 th, .table-w-80 td,
+   .table-w-90 th, .table-w-90 td {
+     white-space: nowrap;
+   }
+   
+   /* ─────────────────────────────────────────────────────────
+   Table Value Colors (Positive/Negative)
+   
+   Use span classes to color numbers in tables:
+   <span class="positive">20.0%</span>
+   <span class="negative">-5.6%</span>
    ───────────────────────────────────────────────────────── */
 
-/* Transform [br] from inline to block element with configurable height */
-.slidev-layout br {
-  display: block;
-  content: "";
-  line-height: var(--br-height);
-}
+    .slidev-layout table .positive {
+      color: #228B22 !important;  /* Forest green */
+    }
 
-/* Alternative spacer using a div - same height as [br] */
-.slidev-layout .spacer {
-  height: var(--br-height);
-}
+    .slidev-layout table .negative {
+      color: #8B0000 !important;  /* Dark red/burgundy - matches --confidential-color */
+    }
 
-/* ─────────────────────────────────────────────────────────
-   REDUCING Space: [gap] and .pull-* classes
    
-   Use these to PULL content CLOSER together by applying
-   negative margins.
-   ───────────────────────────────────────────────────────── */
-
-/* The [gap] element - reduces space between elements
-   Usage: [gap][/gap] or stack multiple [gap][/gap][gap][/gap] */
-.slidev-layout gap {
-  display: block;
-  margin-bottom: var(--gap-height);
-}
-
-/* Pull-up utility classes - wrap content to pull it up
-   Usage: [div class="pull-sm"]Content pulled up[/div] */
-.slidev-layout .pull-xs { margin-top: -4px !important; }
-.slidev-layout .pull-sm { margin-top: -8px !important; }
-.slidev-layout .pull-md { margin-top: -16px !important; }
-.slidev-layout .pull-lg { margin-top: -24px !important; }
-.slidev-layout .pull-xl { margin-top: -32px !important; }
-
-/* Also support on slidev-page level for frontmatter usage */
-.slidev-page.pull-xs .slidev-layout { margin-top: -4px !important; }
-.slidev-page.pull-sm .slidev-layout { margin-top: -8px !important; }
-.slidev-page.pull-md .slidev-layout { margin-top: -16px !important; }
-.slidev-page.pull-lg .slidev-layout { margin-top: -24px !important; }
-.slidev-page.pull-xl .slidev-layout { margin-top: -32px !important; }
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   8. TABLE STYLES                                                            │
-   │                                                                              │
-   │   Tables feature:                                                            │
-   │   • Horizontal lines only (no vertical borders)                              │
-   │   • Alternating row colors for readability                                   │
-   │   • Blue header text matching the theme                                      │
-   │   • Condensed variants for data-heavy slides                                 │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* ─────────────────────────────────────────────────────────
-   Base Table Styles
-   ───────────────────────────────────────────────────────── */
-
-/* Table container */
-.slidev-layout table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--table-font-size);
-  margin: 0.5rem 0;
-  border: none;
-}
-
-/* Table cells (both header and data) */
-.slidev-layout th,
-.slidev-layout td {
-  border: none;
-  border-bottom: 1px solid #e0e0e0;
-  padding: var(--table-cell-padding);
-  text-align: left;
-  line-height: var(--table-line-height);
-}
-
-/* Table header cells */
-.slidev-layout th {
-  background-color: transparent;
-  font-weight: 700 !important;
-  color: #5d8392;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-/* Alternating row colors (zebra striping) */
-.slidev-layout tr:nth-child(even) {
-  background-color: #f9f9fb;
-}
-
-/* Remove bottom border from last row */
-.slidev-layout tr:last-child td {
-  border-bottom: none;
-}
-
-/* ─────────────────────────────────────────────────────────
-   Condensed Table Variants
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   9. LIST STYLES                                                             │
+      │                                                                              │
+      │   Styling for bullet points (unordered lists) and numbered lists.            │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
    
-   Use these classes when you have large tables that need
-   to fit more data on a single slide.
+   /* Unordered and ordered list containers */
+   .slidev-layout ul,
+   .slidev-layout ol {
+     margin-bottom: 1rem;
+     padding-left: 1.5rem;
+     list-style-type: disc;
+   }
    
-   USAGE: Wrap your table in a div with the class:
+   /* Individual list items */
+   .slidev-layout li {
+     margin-bottom: var(--list-item-spacing);
+     line-height: var(--list-line-height);
+     font-size: var(--list-font-size);
+   }
    
-   [div class="table-xs"]
    
-   | Column 1 | Column 2 |
-   |----------|----------|
-   | Data     | Data     |
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   10. UTILITY CLASSES                                                        │
+      │                                                                              │
+      │   Pre-built helper classes that can be applied to slides or elements.        │
+      │                                                                              │
+      │   USAGE IN FRONTMATTER:                                                      │
+      │   ---                                                                        │
+      │   class: dense text-sm                                                       │
+      │   ---                                                                        │
+      │                                                                              │
+      │   USAGE ON ELEMENTS:                                                         │
+      │   [div class="layout-center"]Centered content[/div]                          │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
    
-   [/div]
-   ───────────────────────────────────────────────────────── */
-
-/* Extra Extra Small - Maximum density for side-by-side layouts */
-.table-xxs table { font-size: 0.45em !important; }
-.table-xxs th, .table-xxs td { padding: 0.1rem 0.2rem !important; }
-
-/* Extra Small - Very tight spacing for maximum data density */
-.table-xs table { font-size: 0.5em !important; }
-.table-xs th, .table-xs td { padding: 0.15rem 0.25rem !important; }
-
-/* Small - Compact but still readable */
-.table-sm table { font-size: 0.55em !important; }
-.table-sm th, .table-sm td { padding: 0.2rem 0.3rem !important; }
-
-/* Medium - Slightly condensed from default */
-.table-md table { font-size: 0.6em !important; }
-.table-md th, .table-md td { padding: 0.25rem 0.35rem !important; }
-
-/* Alternative class name for condensed tables */
-.condensed-table table { font-size: 0.5em !important; }
-.condensed-table th, .condensed-table td { padding: 0.15rem 0.25rem !important; }
-
-/* ─────────────────────────────────────────────────────────
-   Table Width Classes (Anchored Left)
+   /* ─────────────────────────────────────────────────────────
+      Layout Containers
+      ───────────────────────────────────────────────────────── */
    
-   Control table width while keeping it left-aligned.
-   Columns auto-size based on content.
+   /* Container for charts and visualizations */
+   .chart-container {
+     width: 100%;
+     height: 400px;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     background: #f8f9fa;
+     border-radius: 8px;
+     margin: 1rem 0;
+   }
    
-   USAGE IN FRONTMATTER:
-   ---
-   class: table-w-50
-   ---
+   /* Align content to top-left corner */
+   .layout-top-left {
+     align-items: flex-start;
+     justify-content: flex-start;
+     text-align: left;
+   }
    
-   USAGE ON SPECIFIC TABLE:
-   [div class="table-w-75"]
-   | Col 1 | Col 2 |
-   |-------|-------|
-   | Data  | Data  |
-   [/div]
+   /* Center content both horizontally and vertically */
+   .layout-center {
+     display: flex;
+     flex-direction: column;
+     justify-content: center;
+     align-items: center;
+     text-align: center;
+     height: 100%;
+   }
    
-   Available: table-w-25, table-w-33, table-w-50, table-w-60, table-w-75, table-w-80, table-w-90
-   ───────────────────────────────────────────────────────── */
-
-/* 25% width */
-.table-w-25 table,
-.slidev-page.table-w-25 .slidev-layout table {
-  width: 25% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 33% width */
-.table-w-33 table,
-.slidev-page.table-w-33 .slidev-layout table {
-  width: 33% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 50% width */
-.table-w-50 table,
-.slidev-page.table-w-50 .slidev-layout table {
-  width: 50% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 60% width */
-.table-w-60 table,
-.slidev-page.table-w-60 .slidev-layout table {
-  width: 60% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 75% width */
-.table-w-75 table,
-.slidev-page.table-w-75 .slidev-layout table {
-  width: 75% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 80% width */
-.table-w-80 table,
-.slidev-page.table-w-80 .slidev-layout table {
-  width: 80% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* 90% width */
-.table-w-90 table,
-.slidev-page.table-w-90 .slidev-layout table {
-  width: 90% !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
-
-/* Auto-fit columns to content (applies to all width variants) */
-.table-w-25 table, .table-w-33 table, .table-w-50 table,
-.table-w-60 table, .table-w-75 table, .table-w-80 table, .table-w-90 table,
-.slidev-page.table-w-25 .slidev-layout table, .slidev-page.table-w-33 .slidev-layout table,
-.slidev-page.table-w-50 .slidev-layout table, .slidev-page.table-w-60 .slidev-layout table,
-.slidev-page.table-w-75 .slidev-layout table, .slidev-page.table-w-80 .slidev-layout table,
-.slidev-page.table-w-90 .slidev-layout table {
-  table-layout: auto;
-}
-
-/* Prevent text wrapping in width-constrained tables */
-.table-w-25 th, .table-w-25 td, .table-w-33 th, .table-w-33 td,
-.table-w-50 th, .table-w-50 td, .table-w-60 th, .table-w-60 td,
-.table-w-75 th, .table-w-75 td, .table-w-80 th, .table-w-80 td,
-.table-w-90 th, .table-w-90 td {
-  white-space: nowrap;
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   9. LIST STYLES                                                             │
-   │                                                                              │
-   │   Styling for bullet points (unordered lists) and numbered lists.            │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* Unordered and ordered list containers */
-.slidev-layout ul,
-.slidev-layout ol {
-  margin-bottom: 1rem;
-  padding-left: 1.5rem;
-  list-style-type: disc;
-}
-
-/* Individual list items */
-.slidev-layout li {
-  margin-bottom: var(--list-item-spacing);
-  line-height: var(--list-line-height);
-  font-size: var(--list-font-size);
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   10. UTILITY CLASSES                                                        │
-   │                                                                              │
-   │   Pre-built helper classes that can be applied to slides or elements.        │
-   │                                                                              │
-   │   USAGE IN FRONTMATTER:                                                      │
-   │   ---                                                                        │
-   │   class: dense text-sm                                                       │
-   │   ---                                                                        │
-   │                                                                              │
-   │   USAGE ON ELEMENTS:                                                         │
-   │   [div class="layout-center"]Centered content[/div]                          │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* ─────────────────────────────────────────────────────────
-   Layout Containers
-   ───────────────────────────────────────────────────────── */
-
-/* Container for charts and visualizations */
-.chart-container {
-  width: 100%;
-  height: 400px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-
-/* Align content to top-left corner */
-.layout-top-left {
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: left;
-}
-
-/* Center content both horizontally and vertically */
-.layout-center {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  height: 100%;
-}
-
-/* ─────────────────────────────────────────────────────────
-   List Density Classes
+   /* ─────────────────────────────────────────────────────────
+      List Density Classes
+      
+      Control the spacing between bullet points.
+      Use in frontmatter: class: dense
+      ───────────────────────────────────────────────────────── */
    
-   Control the spacing between bullet points.
-   Use in frontmatter: class: dense
-   ───────────────────────────────────────────────────────── */
-
-/* Dense - Very tight bullet spacing (0.15rem) */
-.dense li,
-.slidev-layout.dense li,
-.slidev-page.dense .slidev-layout li {
-  margin-bottom: 0.15rem !important;
-}
-
-/* Tight - Tight bullet spacing (0.25rem) */
-.tight li,
-.slidev-layout.tight li,
-.slidev-page.tight .slidev-layout li {
-  margin-bottom: 0.25rem !important;
-}
-
-/* Compact - Slightly tight spacing (0.35rem) */
-.compact li,
-.slidev-layout.compact li,
-.slidev-page.compact .slidev-layout li {
-  margin-bottom: 0.35rem !important;
-}
-
-/* ─────────────────────────────────────────────────────────
-   Font Size Classes
+   /* Dense - Very tight bullet spacing (0.15rem) */
+   .dense li,
+   .slidev-layout.dense li,
+   .slidev-page.dense .slidev-layout li {
+     margin-bottom: 0.15rem !important;
+   }
    
-   Override font size for entire slides.
-   Use in frontmatter: class: text-sm
-   ───────────────────────────────────────────────────────── */
-
-/* Extra Small text (0.75rem / 12px at default base) */
-.text-xs,
-.text-xs *,
-.slidev-page.text-xs .slidev-layout,
-.slidev-page.text-xs .slidev-layout * {
-  font-size: 0.75rem !important;
-}
-
-/* Small text (0.875rem / 14px at default base) */
-.text-sm,
-.text-sm *,
-.slidev-page.text-sm .slidev-layout,
-.slidev-page.text-sm .slidev-layout * {
-  font-size: 0.875rem !important;
-}
-
-/* Base/Normal text (1rem / 16px at default base) */
-.text-base,
-.text-base *,
-.slidev-page.text-base .slidev-layout,
-.slidev-page.text-base .slidev-layout * {
-  font-size: 1rem !important;
-}
-
-/* Large text (1.125rem / 18px at default base) */
-.text-lg,
-.text-lg *,
-.slidev-page.text-lg .slidev-layout,
-.slidev-page.text-lg .slidev-layout * {
-  font-size: 1.125rem !important;
-}
-
-/* ─────────────────────────────────────────────────────────
-   Hide Page Number
+   /* Tight - Tight bullet spacing (0.25rem) */
+   .tight li,
+   .slidev-layout.tight li,
+   .slidev-page.tight .slidev-layout li {
+     margin-bottom: 0.25rem !important;
+   }
    
-   Hides the page number on specific slides.
-   Useful for intro, cover, or special slides.
+   /* Compact - Slightly tight spacing (0.35rem) */
+   .compact li,
+   .slidev-layout.compact li,
+   .slidev-page.compact .slidev-layout li {
+     margin-bottom: 0.35rem !important;
+   }
    
-   USAGE IN FRONTMATTER:
-   ---
-   class: no-page-number
-   ---
-   ───────────────────────────────────────────────────────── */
-
-.slidev-page.no-page-number .page-number,
-.no-page-number .page-number {
-  display: none !important;
-}
-
-
-/* ┌──────────────────────────────────────────────────────────────────────────────┐
-   │                                                                              │
-   │   11. CUSTOM CSS SECTION                                                     │
-   │                                                                              │
-   │   Add your own custom styles below this line.                                │
-   │   These will not be overwritten when updating the template.                  │
-   │                                                                              │
-   │   EXAMPLES:                                                                  │
-   │                                                                              │
-   │   Custom colored box:                                                        │
-   │   .highlight-box {                                                           │
-   │     background: #fff3cd;                                                     │
-   │     border-left: 4px solid #ffc107;                                          │
-   │     padding: 1rem;                                                           │
-   │     margin: 1rem 0;                                                          │
-   │   }                                                                          │
-   │                                                                              │
-   │   Custom spacing class:                                                      │
-   │   .gap-large {                                                               │
-   │     height: 40px;                                                            │
-   │   }                                                                          │
-   │                                                                              │
-   │   Custom text color:                                                         │
-   │   .text-danger { color: #dc3545 !important; }                                │
-   │   .text-success { color: #28a745 !important; }                               │
-   │                                                                              │
-   └──────────────────────────────────────────────────────────────────────────────┘ */
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   YOUR CUSTOM STYLES GO BELOW THIS LINE
-   ═══════════════════════════════════════════════════════════════════════════════ */
+   /* ─────────────────────────────────────────────────────────
+      Font Size Classes
+      
+      Override font size for entire slides.
+      Use in frontmatter: class: text-sm
+      ───────────────────────────────────────────────────────── */
+   
+   /* Extra Small text (0.75rem / 12px at default base) */
+   .text-xs,
+   .text-xs *,
+   .slidev-page.text-xs .slidev-layout,
+   .slidev-page.text-xs .slidev-layout * {
+     font-size: 0.75rem !important;
+   }
+   
+   /* Small text (0.875rem / 14px at default base) */
+   .text-sm,
+   .text-sm *,
+   .slidev-page.text-sm .slidev-layout,
+   .slidev-page.text-sm .slidev-layout * {
+     font-size: 0.875rem !important;
+   }
+   
+   /* Base/Normal text (1rem / 16px at default base) */
+   .text-base,
+   .text-base *,
+   .slidev-page.text-base .slidev-layout,
+   .slidev-page.text-base .slidev-layout * {
+     font-size: 1rem !important;
+   }
+   
+   /* Large text (1.125rem / 18px at default base) */
+   .text-lg,
+   .text-lg *,
+   .slidev-page.text-lg .slidev-layout,
+   .slidev-page.text-lg .slidev-layout * {
+     font-size: 1.125rem !important;
+   }
+   
+   /* ─────────────────────────────────────────────────────────
+      Hide Page Number
+      
+      Hides the page number on specific slides.
+      Useful for intro, cover, or special slides.
+      
+      USAGE IN FRONTMATTER:
+      ---
+      class: no-page-number
+      ---
+      ───────────────────────────────────────────────────────── */
+   
+   .slidev-page.no-page-number .page-number,
+   .no-page-number .page-number {
+     display: none !important;
+   }
+   
+   
+   /* ┌──────────────────────────────────────────────────────────────────────────────┐
+      │                                                                              │
+      │   11. CUSTOM CSS SECTION                                                     │
+      │                                                                              │
+      │   Add your own custom styles below this line.                                │
+      │   These will not be overwritten when updating the template.                  │
+      │                                                                              │
+      │   EXAMPLES:                                                                  │
+      │                                                                              │
+      │   Custom colored box:                                                        │
+      │   .highlight-box {                                                           │
+      │     background: #fff3cd;                                                     │
+      │     border-left: 4px solid #ffc107;                                          │
+      │     padding: 1rem;                                                           │
+      │     margin: 1rem 0;                                                          │
+      │   }                                                                          │
+      │                                                                              │
+      │   Custom spacing class:                                                      │
+      │   .gap-large {                                                               │
+      │     height: 40px;                                                            │
+      │   }                                                                          │
+      │                                                                              │
+      │   Custom text color:                                                         │
+      │   .text-danger { color: #dc3545 !important; }                                │
+      │   .text-success { color: #28a745 !important; }                               │
+      │                                                                              │
+      └──────────────────────────────────────────────────────────────────────────────┘ */
+   
+   /* ═══════════════════════════════════════════════════════════════════════════════
+      YOUR CUSTOM STYLES GO BELOW THIS LINE
+      ═══════════════════════════════════════════════════════════════════════════════ */
+   

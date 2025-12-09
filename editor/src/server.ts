@@ -109,16 +109,6 @@ const restoreFromDb = async () => {
     if (slidesResult.rows.length > 0) {
       writeFileSync(SLIDES_PATH, slidesResult.rows[0].content, 'utf-8');
       console.log('📥 Restored slides.md from database');
-    } else if (SEED_FROM_FILES) {
-      // No data in DB yet - optionally seed from local file
-      if (existsSync(SLIDES_PATH)) {
-        const content = readFileSync(SLIDES_PATH, 'utf-8');
-        await db.query(
-          'INSERT INTO presentations (name, content, theme_name) VALUES ($1, $2, $3)',
-          ['slides.md', content, 'default']
-        );
-        console.log('📤 Seeded slides.md from local file to database');
-      }
     } else {
       // Create empty default presentation if nothing exists
       const defaultContent = `---
@@ -153,19 +143,25 @@ Create your first presentation!
       ['default']
     );
     
-    if (themeResult.rows.length > 0) {
-      writeFileSync(STYLE_PATH, themeResult.rows[0].content, 'utf-8');
-      console.log('📥 Restored style.css from database');
-    } else if (SEED_FROM_FILES) {
-      // No theme in DB yet - optionally seed from local file
-      if (existsSync(STYLE_PATH)) {
-        const content = readFileSync(STYLE_PATH, 'utf-8');
+    if (SEED_FROM_FILES && existsSync(STYLE_PATH)) {
+      // Override database with local style.css
+      const content = readFileSync(STYLE_PATH, 'utf-8');
+      if (themeResult.rows.length > 0) {
+        await db.query(
+          'UPDATE themes SET content = $1 WHERE name = $2',
+          [content, 'default']
+        );
+      } else {
         await db.query(
           'INSERT INTO themes (name, content) VALUES ($1, $2)',
           ['default', content]
         );
-        console.log('📤 Seeded style.css from local file to database');
       }
+      writeFileSync(STYLE_PATH, content, 'utf-8');
+      console.log('📤 Overrode style.css in database from local file');
+    } else if (themeResult.rows.length > 0) {
+      writeFileSync(STYLE_PATH, themeResult.rows[0].content, 'utf-8');
+      console.log('📥 Restored style.css from database');
     } else {
       console.log('⚠️  No default theme in database and SEED_FROM_FILES=false');
     }
