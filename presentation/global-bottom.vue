@@ -25,13 +25,13 @@
 <script setup>
 import { inject, computed } from 'vue'
 
-// $slidev is provided globally by Slidev via Vue's inject system
-const $slidev = inject('$slidev')
+// Access Slidev context (renamed to avoid conflict with auto-injected $slidev)
+const slidevContext = inject('$slidev')
 
 // Check if current slide has 'no-page-number' in its class frontmatter
 const hidePageNumber = computed(() => {
   try {
-    const currentSlide = $slidev?.nav?.currentSlideRoute?.meta?.slide
+    const currentSlide = slidevContext?.nav?.currentSlideRoute?.meta?.slide
     const slideClass = currentSlide?.frontmatter?.class || ''
     return slideClass.includes('no-page-number')
   } catch {
