@@ -9,13 +9,16 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount user-editable files for persistence during development
-      - ./presentation/slides.md:/app/userdata/slides.md
-      - ./presentation/style.css:/app/userdata/style.css
+      # Mount to the SAME location Slidev uses (/app/presentation/)
+      # This allows live editing while keeping paths consistent with Railway
+      - ./presentation/slides.md:/app/presentation/slides.md
+      - ./presentation/style.css:/app/presentation/style.css
     environment:
       - PORT=3000
-      - SLIDES_PATH=/app/userdata/slides.md
-      - STYLE_PATH=/app/userdata/style.css
+      # Use the SAME paths as Dockerfile.railway - NO /app/userdata/ override
+      # Slidev runs from /app/presentation/, so editor must read/write there too
+      - SLIDES_PATH=/app/presentation/slides.md
+      - STYLE_PATH=/app/presentation/style.css
       - SLIDEV_DIR=/app/presentation
       - SLIDEV_URL=http://localhost:3030
       # =====================================================

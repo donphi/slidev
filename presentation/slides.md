@@ -223,7 +223,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 ## Score distribution across S&P 500 universe
 
-
+<BamScoreDistributions />
 
 <!-- ==================== SLIDE 12: BAM Core Strategy ==================== -->
 ---
@@ -302,23 +302,23 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 </div>
 
-<!-- ==================== SLIDE 14: BAM Core Performance ==================== -->
+<!-- ==================== SLIDE 15: BAM Core Performance ==================== -->
 ---
 
 # BAM Core Performance
 
 ## Quarterly Performance: BAM vs SPX
 
+<PerformanceChart />
 
-
-<!-- ==================== SLIDE 15: BAM Core Historical Top 10 ==================== -->
+<!-- ==================== SLIDE 16: BAM Core Historical Top 10 ==================== -->
 ---
 
 # BAM Core Historical Top 10
 
 <BamHistoricalTable />
 
-<!-- ==================== SLIDE 16: BAM Core Live Model ==================== -->
+<!-- ==================== SLIDE 17: BAM Core Live Model ==================== -->
 ---
 
 # BAM Core
@@ -342,7 +342,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 </div>
 
-<!-- ==================== SLIDE 17: BAM Unconstrained Strategy ==================== -->
+<!-- ==================== SLIDE 18: BAM Unconstrained Strategy ==================== -->
 ---
 
 # BAM Unconstrained Strategy
@@ -364,7 +364,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Beta | ~1.2 |
 | Rebalancing | Quarterly (live) / Annual (backtest) |
 
-<!-- ==================== SLIDE 18: BAM Unconstrained Metrics ==================== -->
+<!-- ==================== SLIDE 19: BAM Unconstrained Metrics ==================== -->
 ---
 
 # BAM Unconstrained Metrics
@@ -385,7 +385,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Negative quarters | 21 | 22 |
 | **Dominant quarters** | **54** | **26** |
 
-<!-- ==================== SLIDE 19: BAM Unconstrained Performance ==================== -->
+<!-- ==================== SLIDE 20: BAM Unconstrained Performance ==================== -->
 ---
 
 # BAM Unconstrained Performance
@@ -419,7 +419,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 </div>
 
-<!-- ==================== SLIDE 20: BAM Unconstrained Live Model ==================== -->
+<!-- ==================== SLIDE 21: BAM Unconstrained Live Model ==================== -->
 ---
 
 # BAM Unconstrained Live Model
@@ -442,7 +442,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 </div>
 
-<!-- ==================== SLIDE 21: Risk Management ==================== -->
+<!-- ==================== SLIDE 22: Risk Management ==================== -->
 ---
 
 # Risk Management
@@ -474,7 +474,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
   Quality gates: Modular process with defined checkpoints — extraction, scoring, aggregation each validated before proceeding.
 </div>
 
-<!-- ==================== SLIDE 22: Initial Product ==================== -->
+<!-- ==================== SLIDE 23: Initial Product ==================== -->
 ---
 
 # Launch Product
@@ -490,7 +490,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Performance fee | 20% of alpha, rolling 12-month |
 | Fund structure | CIS South Africa / ICAV Ireland |
 
-<!-- ==================== SLIDE 23: Business Opportunity ==================== -->
+<!-- ==================== SLIDE 24: Business Opportunity ==================== -->
 ---
 
 # Business Opportunity
@@ -509,7 +509,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 - Unemotional, rational, relatable — easy to understand, difficult to replicate
 - Model exportable to other markets with centralized filings (Japan, China, EU)
 
-<!-- ==================== SLIDE 24: Principles & Vision ==================== -->
+<!-- ==================== SLIDE 25: Principles & Vision ==================== -->
 ---
 
 # Principles & Vision
@@ -526,7 +526,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 - Client base: Institutional pension funds, sovereign wealth funds
 - **Target AUM: $1 billion by 2030**
 
-<!-- ==================== SLIDE 25: Business Structure ==================== -->
+<!-- ==================== SLIDE 26: Business Structure ==================== -->
 ---
 
 # Business Structure
@@ -548,7 +548,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 **Governance:** Shareholder agreement in place; terms available for review.
 
-<!-- ==================== SLIDE 26: Capital Raise ==================== -->
+<!-- ==================== SLIDE 27: Capital Raise ==================== -->
 ---
 
 # Capital Raise
@@ -571,7 +571,7 @@ R10 million capital + R500 million initial AUM commitment
 
 **Business model:** Capital-light, cash-generative. First tranche sufficient to reach profitability.
 
-<!-- ==================== SLIDE 27: Shareholding ==================== -->
+<!-- ==================== SLIDE 28: Shareholding ==================== -->
 ---
 
 # Shareholding
@@ -586,7 +586,7 @@ R10 million capital + R500 million initial AUM commitment
 | Investment Partners | 0% | 25% |
 | **Total** | **100%** | **100%** |
 
-<!-- ==================== SLIDE 28: Budget Summary ==================== -->
+<!-- ==================== SLIDE 29: Budget Summary ==================== -->
 ---
 
 # Budget
@@ -595,7 +595,7 @@ R10 million capital + R500 million initial AUM commitment
 
 <BudgetTable />
 
-<!-- ==================== SLIDE 29: Budget Assumptions ==================== -->
+<!-- ==================== SLIDE 30: Budget Assumptions ==================== -->
 ---
 
 # Budget
@@ -624,7 +624,7 @@ R10 million capital + R500 million initial AUM commitment
 
 </div>
 
-<!-- ==================== SLIDE 30: Timeline ==================== -->
+<!-- ==================== SLIDE 31: Timeline ==================== -->
 ---
 
 # Timeline
