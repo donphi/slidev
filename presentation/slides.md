@@ -223,7 +223,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 ## Score distribution across S&P 500 universe
 
-<BamScoreDistributions />
+
 
 <!-- ==================== SLIDE 12: BAM Core Strategy ==================== -->
 ---
@@ -309,7 +309,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 ## Quarterly Performance: BAM vs SPX
 
-<PerformanceChart />
+
 
 <!-- ==================== SLIDE 15: BAM Core Historical Top 10 ==================== -->
 ---

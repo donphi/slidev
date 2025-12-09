@@ -334,17 +334,33 @@ const slidevProxy = createProxyMiddleware({
   target: SLIDEV_URL,
   changeOrigin: true,
   ws: true,
-  // Express strips /slidev for HTTP, but WebSocket upgrades may still have it
-  // Only add /slidev prefix if not already present
-  pathRewrite: (path) => path.startsWith('/slidev') ? path : `/slidev${path}`,
+  // Express strips /slidev for HTTP requests when using app.use('/slidev', proxy)
+  // But WebSocket upgrades keep the full path, so we need to handle both cases
+  pathRewrite: (reqPath, req) => {
+    // For WebSocket connections, the path includes /slidev already
+    // For HTTP requests via app.use('/slidev'), Express strips it
+    const isWebSocket = req.headers.upgrade?.toLowerCase() === 'websocket';
+    if (isWebSocket) {
+      // WebSocket: path already has /slidev, pass through
+      console.log(`[WS Proxy] ${reqPath}`);
+      return reqPath;
+    }
+    // HTTP: Express stripped /slidev, add it back
+    const newPath = reqPath.startsWith('/slidev') ? reqPath : `/slidev${reqPath}`;
+    return newPath;
+  },
   on: {
     proxyRes: (proxyRes) => { 
       slidevRestarting = false;
       // Remove problematic headers that can cause issues
       delete proxyRes.headers['content-security-policy'];
     },
-    error: (_err, _req, res) => {
+    proxyReqWs: (proxyReq, req, socket) => {
+      console.log(`[WS Upgrade] Proxying WebSocket: ${req.url}`);
+    },
+    error: (err, _req, res) => {
       slidevRestarting = true;
+      console.error('[Proxy Error]', err.message);
       // Send simple error page
       if (res && typeof (res as any).writeHead === 'function') {
         try {
@@ -360,6 +376,19 @@ const slidevProxy = createProxyMiddleware({
 });
 
 app.use('/slidev', slidevProxy);
+
+// Also proxy @server-reactive requests (Slidev's internal navigation sync)
+// These requests come WITHOUT the /slidev/ prefix from the browser
+app.use('/@server-reactive', createProxyMiddleware({
+  target: SLIDEV_URL,
+  changeOrigin: true,
+  pathRewrite: (reqPath) => `/slidev/@server-reactive${reqPath}`,
+  on: {
+    error: (err) => {
+      console.error('[@server-reactive proxy error]', err.message);
+    }
+  }
+}));
 
 // ==========================================
 // API ENDPOINTS
@@ -962,9 +991,17 @@ const start = async () => {
   });
   
   // Handle WebSocket upgrade for Vite HMR (needed for export page to load)
+  // This is CRITICAL - without this, HMR WebSocket connections fail
   server.on('upgrade', (req, socket, head) => {
-    if (req.url?.startsWith('/slidev')) {
+    const url = req.url || '';
+    console.log(`[WS Upgrade Request] ${url}`);
+    
+    if (url.startsWith('/slidev')) {
+      console.log(`[WS Upgrade] Proxying to Slidev: ${url}`);
       slidevProxy.upgrade(req, socket as any, head);
+    } else {
+      console.log(`[WS Upgrade] Not a Slidev path, closing: ${url}`);
+      socket.destroy();
     }
   });
   

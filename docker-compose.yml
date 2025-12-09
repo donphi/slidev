@@ -18,6 +18,11 @@ services:
       - STYLE_PATH=/app/userdata/style.css
       - SLIDEV_DIR=/app/presentation
       - SLIDEV_URL=http://localhost:3030
+      # =====================================================
+      # DEBUG/VERBOSE LOGGING
+      # =====================================================
+      - DEBUG=slidev:*,vite:*
+      - VITE_DEBUG=true
       # Set a password to protect the editor (leave empty for no auth)
       - EDITOR_PASSWORD=${EDITOR_PASSWORD:-}
       # Number of backup versions to keep (default: 10)
