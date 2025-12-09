@@ -21,10 +21,10 @@
 -->
 
 <script setup lang="ts">
-    import DistributionChart from './charts/components/DistributionChart.vue'
-    import ChartRow from './charts/components/ChartRow.vue'
-    import { distributionSettings } from './charts/config/chartStyles'
-    
+    import DistributionChart from "../charts/components/DistributionChart.vue"
+    import ChartRow from "../charts/components/ChartRow.vue"
+    import { distributionSettings } from "../charts/config/chartStyles"
+        
     /* ─────────────────────────────────────────────────────────────────────────────
        SIZING
        
