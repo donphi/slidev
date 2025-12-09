@@ -22,7 +22,7 @@ import LineChart from '../charts/components/LineChart.vue'
    ───────────────────────────────────────────────────────────────────────────── */
 
 const CHART_WIDTH = 870
-const CHART_HEIGHT = 380
+const CHART_HEIGHT = 340
 </script>
 
 <template>
