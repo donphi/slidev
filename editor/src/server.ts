@@ -346,10 +346,31 @@ const slidevProxy = createProxyMiddleware({
     return newPath;
   },
   on: {
-    proxyRes: (proxyRes) => { 
+    proxyRes: (proxyRes, req) => { 
       slidevRestarting = false;
       // Remove problematic headers that can cause issues
       delete proxyRes.headers['content-security-policy'];
+      
+      // ==========================================
+      // CACHE CONTROL - Prevent stale module issues
+      // ==========================================
+      // Files with hashes in their names (e.g., app-abc123.js) can be cached
+      // Files without hashes should not be cached to prevent stale code
+      const url = req.url || '';
+      const hasHash = /\.[a-f0-9]{8,}\.(js|css|mjs)/.test(url);
+      
+      if (!hasHash && (url.endsWith('.js') || url.endsWith('.mjs') || url.endsWith('.css') || url.endsWith('.vue'))) {
+        // Dynamic files without hashes - prevent caching
+        proxyRes.headers['cache-control'] = 'no-cache, no-store, must-revalidate';
+        proxyRes.headers['pragma'] = 'no-cache';
+        proxyRes.headers['expires'] = '0';
+      } else if (hasHash) {
+        // Hashed files - safe to cache for a long time
+        proxyRes.headers['cache-control'] = 'public, max-age=31536000, immutable';
+      } else if (url.includes('/@') || url.includes('node_modules')) {
+        // Vite internal modules - short cache
+        proxyRes.headers['cache-control'] = 'no-cache, must-revalidate';
+      }
     },
     proxyReqWs: (proxyReq, req, socket) => {
       console.log(`[WS Upgrade] Proxying WebSocket: ${req.url}`);

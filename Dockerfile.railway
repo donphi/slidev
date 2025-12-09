@@ -65,6 +65,14 @@ echo "Editor: port $PORT"\n\
 echo "Sli.dev: port 3030 (internal)"\n\
 echo "========================================"\n\
 \n\
+# ==========================================\n\
+# CLEAR VITE CACHE - Prevent stale modules\n\
+# ==========================================\n\
+echo "Clearing Vite cache..."\n\
+rm -rf /app/presentation/node_modules/.vite 2>/dev/null || true\n\
+rm -rf /app/presentation/.slidev 2>/dev/null || true\n\
+echo "Cache cleared."\n\
+\n\
 # Start both services\n\
 # --kill-others-on-fail=false: Keep editor running even if slidev crashes\n\
 echo "DEBUG=$DEBUG"\n\

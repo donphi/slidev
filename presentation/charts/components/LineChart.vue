@@ -36,17 +36,9 @@
 
 <script setup lang="ts">
     import { ref, computed, onMounted, watch } from 'vue'
-    import * as echarts from 'echarts/core'
-    import { LineChart as EChartsLine } from 'echarts/charts'
-    import {
-      TitleComponent,
-      TooltipComponent,
-      LegendComponent,
-      GridComponent,
-    } from 'echarts/components'
-    import { SVGRenderer } from 'echarts/renderers'
     import type { EChartsOption, LineSeriesOption } from 'echarts'
     
+    import { echarts } from '../config/echartsSetup'
     import { 
       chartTheme, 
       getBaseChartOptions,
@@ -55,16 +47,6 @@
     } from '../config/chartStyles'
     import { loadCSV, csvToSeries } from '../utils/csvLoader'
     import type { SeriesConfig } from '../utils/csvLoader'
-    
-    // Register ECharts components (tree-shaking friendly)
-    echarts.use([
-      EChartsLine,
-      TitleComponent,
-      TooltipComponent,
-      LegendComponent,
-      GridComponent,
-      SVGRenderer,
-    ])
     
     /* ─────────────────────────────────────────────────────────────────────────────
        PROPS

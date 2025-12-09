@@ -26,39 +26,10 @@
 -->
 
 <script setup lang="ts">
-    import { ref, computed, onMounted, watch, nextTick } from 'vue'
-    import * as echarts from 'echarts/core'
-    import { LineChart, BarChart } from 'echarts/charts'
-    import {
-      TitleComponent,
-      TooltipComponent,
-      LegendComponent,
-      GridComponent,
-      MarkLineComponent,
-    } from 'echarts/components'
-    import { SVGRenderer } from 'echarts/renderers'
-    import type { EChartsOption } from 'echarts'
+    import { ref, computed, onMounted, watch } from 'vue'
+    import type { EChartsOption, BarSeriesOption, LineSeriesOption } from 'echarts'
     
-    import { 
-      chartTypography, 
-      chartGrid, 
-      chartColors,
-      chartTheme,
-      distributionSettings,
-    } from '../config/chartStyles'
-    import { loadCSV } from '../utils/csvLoader'
-    
-    // Register ECharts components
-    echarts.use([
-      LineChart,
-      BarChart,
-      TitleComponent,
-      TooltipComponent,
-      LegendComponent,
-      GridComponent,
-      MarkLineComponent,
-      SVGRenderer,
-    ])
+    import { echarts } from '../config/echartsSetup'
     
     /* ─────────────────────────────────────────────────────────────────────────────
        PROPS
