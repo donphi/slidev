@@ -17,11 +17,11 @@ import LineChart from '../charts/components/LineChart.vue'
 /* ─────────────────────────────────────────────────────────────────────────────
    SIZING
    
-   Slide content width: ~870px
+   Full width: ~870px (slide content width)
    Height: adjust to fit slide content area
    ───────────────────────────────────────────────────────────────────────────── */
 
-const CHART_WIDTH = 580
+const CHART_WIDTH = 870
 const CHART_HEIGHT = 400
 </script>
 
@@ -30,8 +30,8 @@ const CHART_HEIGHT = 400
     <LineChart
       :width="CHART_WIDTH"
       :height="CHART_HEIGHT"
-      title="BAM vs S&P 500 Quarterly Returns"
-      subtitle="2005 Q3 - 2025 Q2"
+      title=""
+      subtitle=""
       csvPath="/data/performance.csv"
       xColumn="Date"
       :yColumns="['SP500 return', 'BAM return']"
