@@ -36,7 +36,7 @@
       GridComponent,
       MarkLineComponent,
     } from 'echarts/components'
-    import { CanvasRenderer } from 'echarts/renderers'
+    import { SVGRenderer } from 'echarts/renderers'
     import type { EChartsOption } from 'echarts'
     
     import { 
@@ -57,7 +57,7 @@
       LegendComponent,
       GridComponent,
       MarkLineComponent,
-      CanvasRenderer,
+      SVGRenderer,
     ])
     
     /* ─────────────────────────────────────────────────────────────────────────────
@@ -417,7 +417,7 @@
       }
       
       chartInstance.value = echarts.init(chartContainer.value, undefined, {
-        renderer: 'canvas',
+        renderer: 'svg',
         width: props.width,
         height: props.height,
       })
