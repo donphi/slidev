@@ -135,19 +135,25 @@
       Fetches and parses a CSV file from the public directory.
       ══════════════════════════════════════════════════════════════════════════════ */
    
-   export async function loadCSV(path: string): Promise<CSVData> {
-     try {
-       const response = await fetch(path)
-       if (!response.ok) {
-         throw new Error(`Failed to load CSV: ${response.status} ${response.statusText}`)
-       }
-       const text = await response.text()
-       return parseCSV(text)
-     } catch (error) {
-       console.error(`Error loading CSV from ${path}:`, error)
-       throw error
-     }
-   }
+    export async function loadCSV(path: string): Promise<CSVData> {
+      try {
+        // Account for Vite base path (e.g., /slidev/)
+        const basePath = import.meta.env.BASE_URL || '/'
+        const fullPath = path.startsWith('/') 
+          ? `${basePath}${path.slice(1)}`  // Remove leading slash to avoid double slash
+          : `${basePath}${path}`
+        
+        const response = await fetch(fullPath)
+        if (!response.ok) {
+          throw new Error(`Failed to load CSV: ${response.status} ${response.statusText}`)
+        }
+        const text = await response.text()
+        return parseCSV(text)
+      } catch (error) {
+        console.error(`Error loading CSV from ${path}:`, error)
+        throw error
+      }
+    }
    
    
    /* ══════════════════════════════════════════════════════════════════════════════
