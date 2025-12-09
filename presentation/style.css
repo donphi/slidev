@@ -26,9 +26,9 @@
    ║   5. HEADING STYLES ................... H1, H2, H3 implementation            ║
    ║   6. TEXT STYLES ...................... Paragraphs, bold, etc.               ║
    ║   7. SPACING ELEMENTS ................. br, gap, .spacer, .pull-*            ║
-   ║   8. TABLE STYLES ..................... Tables and condensed variants        ║
+   ║   8. TABLE STYLES ..................... Tables, condensed, width classes     ║
    ║   9. LIST STYLES ...................... Bullets and numbered lists           ║
-   ║   10. UTILITY CLASSES ................. Layouts, density, font sizes         ║
+   ║   10. UTILITY CLASSES ................. Layouts, density, fonts, page nums   ║
    ║   11. CUSTOM CSS SECTION .............. Add your own styles here             ║
    ║                                                                              ║
    ╚══════════════════════════════════════════════════════════════════════════════╝ */
@@ -569,6 +569,101 @@
 .condensed-table table { font-size: 0.5em !important; }
 .condensed-table th, .condensed-table td { padding: 0.15rem 0.25rem !important; }
 
+/* ─────────────────────────────────────────────────────────
+   Table Width Classes (Anchored Left)
+   
+   Control table width while keeping it left-aligned.
+   Columns auto-size based on content.
+   
+   USAGE IN FRONTMATTER:
+   ---
+   class: table-w-50
+   ---
+   
+   USAGE ON SPECIFIC TABLE:
+   [div class="table-w-75"]
+   | Col 1 | Col 2 |
+   |-------|-------|
+   | Data  | Data  |
+   [/div]
+   
+   Available: table-w-25, table-w-33, table-w-50, table-w-60, table-w-75, table-w-80, table-w-90
+   ───────────────────────────────────────────────────────── */
+
+/* 25% width */
+.table-w-25 table,
+.slidev-page.table-w-25 .slidev-layout table {
+  width: 25% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 33% width */
+.table-w-33 table,
+.slidev-page.table-w-33 .slidev-layout table {
+  width: 33% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 50% width */
+.table-w-50 table,
+.slidev-page.table-w-50 .slidev-layout table {
+  width: 50% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 60% width */
+.table-w-60 table,
+.slidev-page.table-w-60 .slidev-layout table {
+  width: 60% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 75% width */
+.table-w-75 table,
+.slidev-page.table-w-75 .slidev-layout table {
+  width: 75% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 80% width */
+.table-w-80 table,
+.slidev-page.table-w-80 .slidev-layout table {
+  width: 80% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* 90% width */
+.table-w-90 table,
+.slidev-page.table-w-90 .slidev-layout table {
+  width: 90% !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+/* Auto-fit columns to content (applies to all width variants) */
+.table-w-25 table, .table-w-33 table, .table-w-50 table,
+.table-w-60 table, .table-w-75 table, .table-w-80 table, .table-w-90 table,
+.slidev-page.table-w-25 .slidev-layout table, .slidev-page.table-w-33 .slidev-layout table,
+.slidev-page.table-w-50 .slidev-layout table, .slidev-page.table-w-60 .slidev-layout table,
+.slidev-page.table-w-75 .slidev-layout table, .slidev-page.table-w-80 .slidev-layout table,
+.slidev-page.table-w-90 .slidev-layout table {
+  table-layout: auto;
+}
+
+/* Prevent text wrapping in width-constrained tables */
+.table-w-25 th, .table-w-25 td, .table-w-33 th, .table-w-33 td,
+.table-w-50 th, .table-w-50 td, .table-w-60 th, .table-w-60 td,
+.table-w-75 th, .table-w-75 td, .table-w-80 th, .table-w-80 td,
+.table-w-90 th, .table-w-90 td {
+  white-space: nowrap;
+}
+
 
 /* ┌──────────────────────────────────────────────────────────────────────────────┐
    │                                                                              │
@@ -708,6 +803,23 @@
 .slidev-page.text-lg .slidev-layout,
 .slidev-page.text-lg .slidev-layout * {
   font-size: 1.125rem !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Hide Page Number
+   
+   Hides the page number on specific slides.
+   Useful for intro, cover, or special slides.
+   
+   USAGE IN FRONTMATTER:
+   ---
+   class: no-page-number
+   ---
+   ───────────────────────────────────────────────────────── */
+
+.slidev-page.no-page-number .page-number,
+.no-page-number .page-number {
+  display: none !important;
 }
 
 
