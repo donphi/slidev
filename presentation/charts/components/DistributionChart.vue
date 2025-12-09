@@ -26,10 +26,18 @@
 -->
 
 <script setup lang="ts">
-    import { ref, computed, onMounted, watch } from 'vue'
+    import { ref, computed, onMounted, watch, nextTick } from 'vue'
     import type { EChartsOption, BarSeriesOption, LineSeriesOption } from 'echarts'
     
     import { echarts } from '../config/echartsSetup'
+    import { loadCSV } from '../utils/csvLoader'
+    import { 
+      chartGrid, 
+      chartTypography, 
+      chartTheme, 
+      chartColors, 
+      distributionSettings 
+    } from '../config/chartStyles'
     
     /* ─────────────────────────────────────────────────────────────────────────────
        PROPS
