@@ -553,6 +553,10 @@
    [/div]
    ───────────────────────────────────────────────────────── */
 
+/* Extra Extra Small - Maximum density for side-by-side layouts */
+.table-xxs table { font-size: 0.45em !important; }
+.table-xxs th, .table-xxs td { padding: 0.1rem 0.2rem !important; }
+
 /* Extra Small - Very tight spacing for maximum data density */
 .table-xs table { font-size: 0.5em !important; }
 .table-xs th, .table-xs td { padding: 0.15rem 0.25rem !important; }

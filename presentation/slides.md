@@ -134,11 +134,38 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Data Pipeline
 
+<div class="flex gap-6 items-start">
+<div>
 
-  <PerformanceChart />
+<PerformanceChart />
 
+<div class="table-xs">
 
+| Year | BAM | S&P | Alpha |
+|------|----:|----:|------:|
+| 2006 | 20.0% | 8.7% | <span class="text-green-600">11.4%</span> |
+| 2007 | 30.2% | 20.0% | <span class="text-green-600">10.2%</span> |
+| 2008 | -5.6% | -13.1% | <span class="text-green-600">7.5%</span> |
+| 2009 | -9.7% | -25.5% | <span class="text-green-600">15.8%</span> |
+| 2010 | 16.3% | 14.5% | <span class="text-green-600">1.7%</span> |
+| 2011 | 34.2% | 27.9% | <span class="text-green-600">6.3%</span> |
+| 2012 | -13.8% | 6.4% | <span class="text-red-600">-20.3%</span> |
+| 2013 | 40.6% | 20.0% | <span class="text-green-600">20.6%</span> |
+| 2014 | 29.2% | 24.7% | <span class="text-green-600">4.4%</span> |
+| 2015 | 22.4% | 7.0% | <span class="text-green-600">15.4%</span> |
+| 2016 | 11.5% | 2.8% | <span class="text-green-600">8.7%</span> |
+| 2017 | 40.1% | 19.1% | <span class="text-green-600">21.0%</span> |
+| 2018 | 34.7% | 14.5% | <span class="text-green-600">20.2%</span> |
+| 2019 | 36.9% | 10.1% | <span class="text-green-600">26.8%</span> |
+| 2020 | 8.6% | 6.0% | <span class="text-green-600">2.6%</span> |
+| 2021 | 70.7% | 42.5% | <span class="text-green-600">28.2%</span> |
+| 2022 | 7.8% | -9.8% | <span class="text-green-600">17.6%</span> |
+| 2023 | 26.1% | 17.1% | <span class="text-green-600">9.0%</span> |
+| 2024 | 18.2% | 25.9% | <span class="text-red-600">-7.8%</span> |
+| 2025 | 24.1% | 14.4% | <span class="text-green-600">9.7%</span> |
 
+</div>
+</div>
 
 <!-- ==================== SLIDE 8: Technical Infrastructure ==================== -->
 ---

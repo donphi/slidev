@@ -21,7 +21,7 @@ import LineChart from '../charts/components/LineChart.vue'
    Height: adjust to fit slide content area
    ───────────────────────────────────────────────────────────────────────────── */
 
-const CHART_WIDTH = 870
+const CHART_WIDTH = 580
 const CHART_HEIGHT = 400
 </script>
 
@@ -47,6 +47,6 @@ const CHART_HEIGHT = 400
 .performance-chart-wrapper {
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 </style>
