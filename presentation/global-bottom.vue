@@ -16,11 +16,29 @@
     CONFIDENTIAL
   </div>
   
-  <!-- Page Number -->
-  <div class="page-number">
+  <!-- Page Number (hidden if slide has 'no-page-number' class in frontmatter) -->
+  <div v-if="!hidePageNumber" class="page-number">
     {{ $slidev.nav.currentPage }} of {{ $slidev.nav.total }}
   </div>
 </template>
+
+<script setup>
+import { inject, computed } from 'vue'
+
+// $slidev is provided globally by Slidev via Vue's inject system
+const $slidev = inject('$slidev')
+
+// Check if current slide has 'no-page-number' in its class frontmatter
+const hidePageNumber = computed(() => {
+  try {
+    const currentSlide = $slidev?.nav?.currentSlideRoute?.meta?.slide
+    const slideClass = currentSlide?.frontmatter?.class || ''
+    return slideClass.includes('no-page-number')
+  } catch {
+    return false // Default: show page number if anything fails
+  }
+})
+</script>
 
 <style scoped>
 /* ===========================================

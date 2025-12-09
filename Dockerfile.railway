@@ -86,7 +86,7 @@ ENV NODE_NO_WARNINGS=1
 ENV CHOKIDAR_USEPOLLING=false
 # SEED_FROM_FILES: Set to 'false' to prevent local files from overriding database
 # In production, database is source of truth
-ENV SEED_FROM_FILES=true
+ENV SEED_FROM_FILES=false
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
