@@ -122,17 +122,32 @@
        ───────────────────────────────────────────────────────────────────────────── */
     
     function calculateStats(data: number[]) {
-      if (data.length === 0) return { mean: 0, std: 0, min: 0, max: 0 }
-      
-      const n = data.length
-      const mean = data.reduce((a, b) => a + b, 0) / n
-      const variance = data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n
-      const std = Math.sqrt(variance)
-      const min = Math.min(...data)
-      const max = Math.max(...data)
-      
-      return { mean, std, min, max }
-    }
+        if (data.length === 0) return { mean: 0, std: 0, min: 0, max: 0 }
+        
+        const n = data.length
+        let sum = 0
+        let min = Infinity
+        let max = -Infinity
+        
+        // Single pass for mean, min, max (handles large arrays)
+        for (let i = 0; i < n; i++) {
+            const val = data[i]
+            sum += val
+            if (val < min) min = val
+            if (val > max) max = val
+        }
+        
+        const mean = sum / n
+        
+        // Second pass for variance
+        let varianceSum = 0
+        for (let i = 0; i < n; i++) {
+            varianceSum += (data[i] - mean) ** 2
+        }
+        const std = Math.sqrt(varianceSum / n)
+        
+        return { mean, std, min, max }
+        }
     
     function createHistogram(data: number[], binCount: number, min: number, max: number) {
       const binWidth = (max - min) / binCount
