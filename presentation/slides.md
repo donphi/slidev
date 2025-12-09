@@ -15,7 +15,7 @@ mdc: true
 
 ## Introduction & Capital Raise — December 2025
 
-<p class="text-lg opacity-70 italic mt-8">Quantifying what everyone knows but no one measures</p>
+<p class="text-lg opacity-70 italic mt-8">Quantifying what everyone knows, but no one measures</p>
 
 <!-- ==================== SLIDE 2: The Insight ==================== -->
 ---
@@ -24,9 +24,9 @@ mdc: true
 
 ## Everyone knows management matters. No one systematically measures it.
 
-- Every investor says "we back great management team"
+- Every investor says "we back great management teams"
 - No one has a repeatable, quantitative framework to identify them
-- We built one, and it generates alpha
+- We built one, and it generates Alpha
 
 <div class="mt-8 p-4 bg-gray-100 rounded border-l-4 border-green-500 dark:bg-gray-800">
   <strong>The gap we exploit:</strong><br>
@@ -66,13 +66,14 @@ mdc: true
 
 # Investment Philosophy
 
-## Management drives outcomes. Everything else is derivative.
+## Management drives outcomes. Everything else are derivatives.
 
 - Business fundamentals are the *result* of management decisions
 - Investment returns follow management quality
 - Yet the industry obsesses over the derivatives (financials, price action) while treating the primary driver as "qualitative"
 
-## What if you could score management systematically.
+
+## What if you could score management systematically?
 
 - Quantitative scoring of leadership qualities and characteristics
 - Formula-driven — removes emotional bias from allocation
@@ -95,7 +96,7 @@ class: table-w-50
 | **Experience** | Years in role, industry tenure |
 | **Age** | Career stage, succession risk |
 | **Demographics** | Board diversity metrics |
-| **Technology Literacy** | Digital transformation capability |
+| **Technology Literacy** | Digital transformation & innovation capability |
 
 <div class="mt-22 text-xs opacity-75">
   <strong>Note:</strong><br>
@@ -122,7 +123,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 ### Target performance:
 - BAM Core: S&P 500 + 300 bps (lower active risk)
-- BAM Unconstrained: S&P 500 + 1,000 bps (higher active risk)
+- BAM Unconstrained: S&P 500 + 800 bps (higher active risk)
 
 ### Discipline:
 - Benchmark as base — we optimize, not rebuild from scratch
@@ -134,7 +135,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # Data Pipeline
 
-<PerformanceChart />
+<ProductionPipeline />
 
 <!-- ==================== SLIDE 8: Technical Infrastructure ==================== -->
 ---
@@ -147,10 +148,10 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 | Layer | Stack |
 |-------|-------|
-| LLM Extraction | Claude, GPT-4 |
-| NLP & Entity Recognition | spaCy, custom NER |
-| Core Pipeline | Python, Docker |
-| Database | PostgreSQL, Elasticsearch |
+| LLM Extraction | GPT 5, internal spesialised ProxyLM |
+| NLP & Entity Recognition | Custom NER |
+| Core Pipeline | Python, Docker, Google Colab |
+| Database | LanceDB, Microsoft Excel |
 | Backtesting | QuantConnect |
 | Infrastructure | Containerized, CI/CD |
 
@@ -162,10 +163,10 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 <div class="table-sm">
 
 | Source | Status | Coverage |
-|--------|--------|----------|
+|------|--------|----------|
 | SEC EDGAR | Live | 100% S&P 500 |
 | Proxy statements (DEF 14A) | Live | Compensation, tenure, shareholding |
-| 10-K filings | Live | Track record, qualifications |
+| 10-K filings | Exploring | Track record, qualifications |
 | LinkedIn | Exploring | Career trajectory validation |
 | Credit bureaus | Exploring | Executive financial behavior |
 
@@ -180,18 +181,18 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 | Metric | Value |
 |--------|-------|
-| Data analyzed | 3 million pages of company filings |
-| Individual scorecards calculated | 130,000 |
-| Company scorecards calculated | 10,000 |
+| Data analyzed | 800,000 pages of company filings |
+| Individual scorecards calculated | 170,000 |
+| Company scorecards calculated | 9,000 |
 | Market coverage | 93% (~800 companies over 20 years) |
 | Rebalancing | Annual |
 
 ### Results preview:
 
-| Strategy | Return |
-|----------|-------|
-| **BAM Core** (top 20% per sector) - _lower risk_ | 4.2% annualized |
-| **BAM Unconstrained** (top 20 overall)-  _higher risk_ | 10.1% annualized |
+| Strategy | Return | Alpha |
+|---------|-------|-------|
+| **BAM Core** (top 20% per sector) - _lower risk_ | 14.8% annualized | 4.2% |
+| **BAM Unconstrained** (top 20 overall)-  _higher risk_ | 20.6% annualized | 10.1% |
 
 <!-- ==================== SLIDE 10: Backtest Methodology ==================== -->
 ---
@@ -202,7 +203,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 - Individual scores calculated annually using only filings available at each calculation date
 - No lookahead bias — every backtest decision uses historical information only
-- 93% market coverage (~800 companies across 20-year period)
+- 93% market coverage (~800 unique companies across 20-year period)
 
 ### Validation rigor:
 
@@ -213,10 +214,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Corporate actions | Adjusted for unbundlings, takeovers, ticker changes, delistings |
 | Outlier inspection | Individual score regression to identify and review anomalies |
 
-<div class="mt-8 text-xs opacity-75">
-  <strong>Note:</strong><br>
-  Individual score regression utilised to identify and inspect outliers
-</div>
+
 
 <!-- ==================== SLIDE 11: Score Distribution ==================== -->
 ---
@@ -232,12 +230,12 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Core Strategy
 
-## BAM Core: Sector-Aligned Alpha
+## BAM Core: Sector-Aligned
 
 ### Strategy
-- Invests in top 20% of management scores *within each sector* (~85 companies)
+- Invests in top 20% of weight *within each sector* according to scores (~85 companies)
 - Maintains sector alignment with S&P 500 benchmark
-- Lower tracking error, institutional-friendly risk profile
+- Lower tracking error, institutional-friendly risk profile, enriched returns
 
 ### Characteristics
 
@@ -275,7 +273,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Core Performance
 
-## BAM Core: Annual Performance
+## Annual Performance
 
 <div class="table-xs">
 
@@ -303,6 +301,16 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | 2025 | 15.0% | 14.4% | 0.7% |
 
 </div>
+
+<!-- ==================== SLIDE 14: BAM Core Performance ==================== -->
+---
+
+# BAM Core Performance
+
+## Quarterly Performance: BAM vs SPX
+
+<PerformanceChart />
+
 <!-- ==================== SLIDE 15: BAM Core Historical Top 10 ==================== -->
 ---
 
@@ -329,8 +337,8 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 | Quarter | Portfolio | Return | S&P500 Return | Alpha |
 | :--- | :--- | :---: | :---: | :---: |
-| 2025Q3 | BAM UC | 4.15% | 8.51% | -4.36% |
-| 2025Q4 (26_11) | BAM UC | 6.43% | 1.73% | 4.70% |
+| 2025Q3 | BAM Core | 9.78% | 8.51% | 1.27% |
+| 2025Q4 (26_11) | BAM Core | 3.26% | 1.73% | 1.53% |
 
 </div>
 
@@ -339,7 +347,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 # BAM Unconstrained Strategy
 
-## BAM Unconstrained: Concentrated Alpha
+## BAM Unconstrained: Focused Strategy
 
 ### Strategy
 - Invests in top 20 management scores across entire universe — no sector constraints
@@ -350,8 +358,8 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 | Attribute | BAM Unconstrained |
 |-----------|-------------------|
-| Target return | S&P 500 + 1,000 bps |
-| Holdings | ~20 companies |
+| Target return | S&P 500 + 800 bps |
+| Holdings | 20 companies |
 | Sector weights | Unconstrained |
 | Beta | ~1.2 |
 | Rebalancing | Quarterly (live) / Annual (backtest) |
@@ -422,7 +430,6 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 
 <BamUnLiveTable />
 
-<br>
 
 ### Live Performance:
 
@@ -445,7 +452,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 ### Philosophy:
 - Start with benchmark as base — optimize, don't reinvent
 - Target alpha while minimizing downside volatility
-- Continuous quality control at every pipeline stage
+- Continuous quality control at every stage
 
 ### Controls:
 
@@ -454,7 +461,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Control | Implementation |
 |---------|----------------|
 | Data quality | High-trust sources only (SEC EDGAR primary) |
-| Extraction validation | Structured checks on LLM outputs |
+| Extraction validation | Structured checks on LLM outputs + Sparse AutoEncoding |
 | Scoring audit | Every score traceable to source filing |
 | Portfolio constraints | Sector limits (Core), position limits |
 | Model refinement | Ongoing backtesting and optimization |
@@ -470,7 +477,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 <!-- ==================== SLIDE 22: Initial Product ==================== -->
 ---
 
-# Initial Product
+# Launch Product
 
 ## BAM Core Fund
 
@@ -532,12 +539,13 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 | Anomaly Capital (Pty) Ltd | FSP II-A license holder, Johan Barkhuysen (100%) |
 
 ### Current Shareholders:
-- Anomaly Capital: 95%
-- Francois Dercksen: 5%
-
+- Anomaly Capital: 93%
+- Francois Dercksen: 4.5%
+- Rohan van Loggerenberg: 2.5%
 <br>
 
 **License arrangement:** BoardAM utilizes Anomaly's FSP license at cost until sufficient scale for independent license.
+
 **Governance:** Shareholder agreement in place; terms available for review.
 
 <!-- ==================== SLIDE 26: Capital Raise ==================== -->
@@ -572,8 +580,9 @@ R10 million capital + R500 million initial AUM commitment
 
 | Shareholder | Pre-Raise | Post-Raise |
 |-------------|:---------:|:----------:|
-| Johan Barkhuysen | 95% | 70% |
-| Francois Dercksen | 5% | 5% |
+| Johan Barkhuysen | 93% | 68% |
+| Francois Dercksen | 4.5% | 4.5% |
+| Rohan van Loggerenberg | 2.5% | 2.5% |
 | Investment Partners | 0% | 25% |
 | **Total** | **100%** | **100%** |
 
@@ -630,5 +639,5 @@ R10 million capital + R500 million initial AUM commitment
 | Fund vehicle available | 1 February 2026 |
 | Fund launch | March 2026 |
 | First institutional client | Q2 2026 |
-| R500m AUM milestone | Q4 2026 |
-| Second tranche capital | Q3 2027 |
+| Additional R500m AUM (Net R1 billion) | Q4 2026 |
+| Second tranche capital | Q2 2027 |

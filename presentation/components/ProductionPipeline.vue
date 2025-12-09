@@ -100,11 +100,13 @@ const props = defineProps({
 // ============================================================================
 // LLM MODEL LOGOS CONFIGURATION
 // Edit this array to change which logos appear in the optimization box
+// Uses import.meta.env.BASE_URL to support proxied deployments (e.g. /slidev/)
 // ============================================================================
+const base = import.meta.env.BASE_URL || '/'
 const llmModels = [
-  { name: 'Gemini 3', logo: '/img/gemini.svg' },
-  { name: 'GPT-5.1', logo: '/img/openai.svg' },
-  { name: 'Claude 4.5', logo: '/img/anthropic.svg' }
+  { name: 'Gemini 3', logo: `${base}img/gemini.svg` },
+  { name: 'GPT-5.1', logo: `${base}img/openai.svg` },
+  { name: 'Claude 4.5', logo: `${base}img/anthropic.svg` }
 ]
 
 // Computed property for animation class
