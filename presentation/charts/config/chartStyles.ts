@@ -457,19 +457,34 @@
        itemStyle: { color: chartColors.neutral },
      },
      
-     // Large dataset optimized (no points, thinner line)
-     largeData: {
-       type: 'line',
-       smooth: 0.2,
-       symbol: 'none',
-       showSymbol: false,
-       sampling: 'lttb',
-       large: true,
-       largeThreshold: 1000,
-       animation: false,
-       lineStyle: { width: 1.5 },
-     },
-   }
+    // Large dataset optimized (no points, thinner line)
+    largeData: {
+      type: 'line',
+      smooth: 0.2,
+      symbol: 'none',
+      showSymbol: false,
+      sampling: 'lttb',
+      large: true,
+      largeThreshold: 1000,
+      animation: false,
+      lineStyle: { width: 1.5 },
+    },
+    
+    // Burgundy line (deep burgundy from brand colors)
+    burgundy: {
+      type: 'line',
+      smooth: lineStyles.smooth,
+      symbol: 'circle',
+      symbolSize: lineStyles.symbolSize,
+      showSymbol: lineStyles.showSymbol,
+      sampling: largeDataSettings.sampling,
+      large: largeDataSettings.large,
+      largeThreshold: largeDataSettings.largeThreshold,
+      animation: largeDataSettings.animation,
+      lineStyle: { color: '#8b4049', width: lineStyles.lineWidth },
+      itemStyle: { color: '#8b4049' },
+    },
+  }
    
    
    /* ══════════════════════════════════════════════════════════════════════════════

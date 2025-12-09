@@ -44,7 +44,7 @@
       LegendComponent,
       GridComponent,
     } from 'echarts/components'
-    import { CanvasRenderer } from 'echarts/renderers'
+    import { SVGRenderer } from 'echarts/renderers'
     import type { EChartsOption, LineSeriesOption } from 'echarts'
     
     import { 
@@ -63,7 +63,7 @@
       TooltipComponent,
       LegendComponent,
       GridComponent,
-      CanvasRenderer,
+      SVGRenderer,
     ])
     
     /* ─────────────────────────────────────────────────────────────────────────────
@@ -259,7 +259,7 @@
       
       // Create new instance
       chartInstance.value = echarts.init(chartContainer.value, undefined, {
-        renderer: 'canvas',
+        renderer: 'svg',
         width: props.width,
         height: props.height,
       })

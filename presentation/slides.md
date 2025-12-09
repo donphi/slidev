@@ -135,7 +135,7 @@ h3 { margin-top: 0.3rem !important; }     /* Space above subheading */
 # Data Pipeline
 
 
-  <ProductionPipeline />
+  <PerformanceChart />
 
 
 
